@@ -17,6 +17,12 @@ class PortReader:
         self.__payloads = []
 
     def set_port(self, port, baud_rate):
+        """
+
+        :param port: Номер ком порта
+        :param baud_rate: Скорость общения с ком портом
+        :return: True если настрйока и подключение к порту были успешны, иначе False
+        """
         try:
             self.__serial_port = serial.Serial(
                 port=port,
@@ -122,6 +128,10 @@ class PortReader:
             time.sleep(0.2)
 
     def connect(self):
+        """
+
+        :return: Открывает порт для чтения и возвращает True, если порт откртыт, иначе False
+        """
         try:
             self.__serial_port.open()
             return self.__serial_port.is_open()
@@ -129,6 +139,10 @@ class PortReader:
             return False
 
     def start_read(self):
+        """
+        Начинает чтение, если до этого порт был открыт
+        :return: True, если чтение началось, инчае False
+        """
         if self.__serial_port.isOpen():
             self.__reading_thread = threading.Thread(target=self.__read, daemon=True)
             self.__reading_thread.start()
@@ -138,6 +152,10 @@ class PortReader:
             return False
 
     def stop_read(self):
+        """
+        Заканчивает чтение
+        :return: Возвращает все считанные данные.
+        """
         print(self.__reading_thread)
         self.__stop_thread = True
         self.__reading_thread.join()

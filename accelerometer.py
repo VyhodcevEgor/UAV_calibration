@@ -66,15 +66,13 @@ def validate_raw_data(raw_data, ideal_data, sensor_threshold):
     return check_result
 
 
-def calibrate_accelerometer(raw_data, ideal_data, error_threshold, sens_thrsh):
+def calibrate_accelerometer(raw_data, error_threshold, sens_thrsh):
     """
     Данная функция производит математическую обработку raw данных для получения
     матрицы калибровки. Затем происходит проверка полученной матрицы - проходят
     ли откалиброванные raw данные допуск "error_threshold", введённый
     пользователем.
     :param raw_data: Массив raw данных <numpy.ndarray> размерностью 6x3.
-    :param ideal_data: Массив идеальных данных <numpy.ndarray>
-        размерностью 6x3.
     :param error_threshold: Допустимая погрешность калибровки, вводимая
         пользователем. Тип данных - float.
     :param sens_thrsh: Допуск для данного типа датчика. Значение в
@@ -82,6 +80,14 @@ def calibrate_accelerometer(raw_data, ideal_data, error_threshold, sens_thrsh):
         данных - float.
     :return: Возвращает <numpy.ndarray> калибровочную матрицу размерностью 4x3.
     """
+    ideal_data = np.array([
+        [1.0, 0.0, 0.0],
+        [-1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, -1.0, 0.0],
+        [0.0, 0.0, 1.0],
+        [0.0, 0.0, -1.0]
+    ])
     err_expected_data = validate_raw_data(raw_data, ideal_data, sens_thrsh)
     if err_expected_data:
         print(
@@ -125,19 +131,12 @@ def calibrate_accelerometer(raw_data, ideal_data, error_threshold, sens_thrsh):
         return calibration_matrix
 
 
-def input_data_validation(
-        ideal_matrix,
-        calibration_matrix,
-        raw_dimensions,
-        error_threshold
-):
+def input_data_validation(calibration_matrix, raw_dimensions, error_threshold):
     """
     Данная функция проверяет все входные значения на предмет аномальных
     выбросов, которые могли бы повлиять на точность калибровки. Функция идёт по
     списку всех измерений и проверяет, попадает ли данное измерение в допуск
     после произведения на матрицу калибровки.
-    :param ideal_matrix: Массив идеальных данных <numpy.ndarray> размерностью
-        6x3.
     :param calibration_matrix: Калибровочная матрица <numpy.ndarray>
         размерностью 4x3, полученная после математической обработки.
     :param raw_dimensions: Список всех измерений для каждого положения датчика.
@@ -148,6 +147,14 @@ def input_data_validation(
     :return: Возвращает boolean переменную, которая описывает результат
         проверки.
     """
+    ideal_matrix = np.array([
+        [1.0, 0.0, 0.0],
+        [-1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, -1.0, 0.0],
+        [0.0, 0.0, 1.0],
+        [0.0, 0.0, -1.0]
+    ])
     flag = False
     for idx, dim in enumerate(raw_dimensions):
         # print(f'Dimension {idx}:\n {dim}')

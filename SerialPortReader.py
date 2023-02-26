@@ -84,15 +84,6 @@ class PortReader:
             if amount_of_bytes == 76:
                 data = bytes.fromhex(byte_line)
                 self.__payloads.append(IBCMAllMeasPayloads(data))
-                # УДАЛИТЬ НА ПРОДЕ
-                temp_data = IBCMAllMeasPayloads(data)
-                print(temp_data.aGyr)
-                print(temp_data.aAcc)
-                print(temp_data.gyrAccTemperature)
-                print(temp_data.aMag)
-                print(temp_data.gyrAccTemperature)
-                print(temp_data.controlSumm)
-                # ДАЛЬШЕ УДАЛЯТЬ НЕ НАДО
 
         else:
 
@@ -161,44 +152,12 @@ class PortReader:
         self.__reading_thread.join()
         return self.__payloads
 
+    def close_port(self):
+        """
+        Функция закрывает откртый ранее порт
+        :return: True - если порт был закрыт успешно, иначе False
+        """
 
-main_bus = PortReader()
-payloads = []
-while True:
-    print("1. Настроить порт и скорость передачи")
-    print("2. Начать чтение")
-    print("3. Закончить чтение")
-    print("4. Вывести считанные данные")
-    print("5. Выход")
-    choose = int(input("Ваш выбор: "))
-    if choose == 1:
-        com_port = input("Введите COM порт (например: COM12): ")
-        speed = int(input("Введите скорость передачи (например: 115200): "))
-        result = main_bus.set_port(com_port, speed)
-        if result:
-            print("Успешное подключение!")
-        else:
-            print("Не подключено")
-    elif choose == 2:
-        result = main_bus.start_read()
-        if result:
-            print("Чтение началось")
-        else:
-            print("Чтение не началось")
-    elif choose == 3:
-        payloads = main_bus.stop_read()
-    elif choose == 4:
-        for payload in payloads:
-            print(payload.header)
-            print(payload.timeStamp)
-            print(payload.statusFlags)
-            print(payload.ulDt_us)
-            print(payload.aGyr)
-            print(payload.aAcc)
-            print(payload.gyrAccTemperature)
-            print(payload.aMag)
-            print(payload.gyrAccTemperature)
-            print(payload.controlSumm)
-            print("-" * 64)
-    else:
-        break
+        if self.__serial_port.is_open():
+            self.__serial_port.close()
+        return not self.__serial_port.is_open()

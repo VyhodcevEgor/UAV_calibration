@@ -1,7 +1,7 @@
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtWidgets
-from serial.tools import list_ports
+import serial
 import sys
 import json
 import error
@@ -53,8 +53,8 @@ class MainWindow(QMainWindow):
 
         types = ['Тип 1', 'Тип 2']
         views = ['Акселерометр', 'Гироскоп', 'Магнитометр']
-        self.ports = list_ports.comports()
-        port_names = [port.name for port in self.ports]
+        #self.ports = list_ports.comports()
+        port_names = self.serial_ports()
         speeds = ['115200']
 
         # Заполнение необходимых полей при инициализации
@@ -63,6 +63,28 @@ class MainWindow(QMainWindow):
         self.comPort.addItems(port_names)
         self.speedMean.addItems(speeds)
         self.comName.setText('')
+
+    """Получение списка доступных портов"""
+    def serial_ports(self):
+        if sys.platform.startswith('win'):
+            ports = ['COM%s' % (i + 1) for i in range(256)]
+        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+            # this excludes your current terminal "/dev/tty"
+            ports = glob.glob('/dev/tty[A-Za-z]*')
+        elif sys.platform.startswith('darwin'):
+            ports = glob.glob('/dev/tty.*')
+        else:
+            raise EnvironmentError('Unsupported platform')
+
+        result = []
+        for port in ports:
+            try:
+                s = serial.Serial(port)
+                s.close()
+                result.append(port)
+            except (OSError, serial.SerialException):
+                pass
+        return result
 
     """Данный метод используется для открытия и закрытия консоли"""
     def open_close_console(self):

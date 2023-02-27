@@ -177,8 +177,8 @@ class MainWindow(QMainWindow):
     def open_close_com_port(self):
         if self.open_com:
             # Настройки порта
-            port = self.comPort.value()
-            baud_rate = self.speedMean.value()
+            port = self.comPort.currentText()
+            baud_rate = self.speedMean.currentText()
             port_seted = self.port_reader.set_port(port, baud_rate)
             if not port_seted:
                 message = 'Настройки порта не могут быть совершены'

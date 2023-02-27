@@ -5,6 +5,9 @@ from serial.tools import list_ports
 import sys
 import json
 import error
+import accelerometer as accel
+import SerialPortReader as ports
+import time
 
 
 class MainWindow(QMainWindow):
@@ -12,15 +15,24 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         uic.loadUi('untitled.ui', self)
 
-        # Здесь определяются свойства для хранения временных данных
+        # Здесь определяются свойства для хранения временных данных или констант
         self.open_com = True
         self.console_opened = True
         self.progress_value = 0
+        self.progress_addition = {
+            'Акселерометр': 16.7,
+            'Гироскоп': 16.7,
+            'Магнитометр': 4.2
+        }
         self.matrix = [[4, 1, 5, 6, 3, 6], [4, 1, 5, 6, 3, 6], [4, 1, 5, 6, 3, 6]]
+        self.position_data = []
         self.magnetic_declination = 0 # магнетическое склонение
-        self.accelerometer_allowance = 0 # допуски отклонений
-        self.gyroscope_allowance = 0
-        self.magnetometer_allowance = 0
+        self.accelerometer_allowance = 0 # допуск отклонений акселерометра
+        self.gyroscope_allowance = 0 # допуск отклонений гироскопа
+        self.magnetometer_allowance = 0 # допуск отклонений магнитометра
+        self.max_allowance = 0 # допустимая погрешность калибровки
+        self.port_reader = ports.PortReader()
+        self.sleeping_time = 5000
 
         # Скрытие и отображение виджитов при инициализации
         if not self.console_opened:
@@ -74,6 +86,7 @@ class MainWindow(QMainWindow):
         self.accelerometer_allowance = self.accelerometerAllowance.value()
         self.gyroscope_allowance = self.gyroscopeAllowance.value()
         self.magnetometer_allowance = self.magnetometerAllowance.value()
+        self.max_allowance = self.maxAllowance.value()
 
         # Инициализация виджета прогресса калибровки
         self.progressBar.setValue(self.progress_value)
@@ -83,15 +96,34 @@ class MainWindow(QMainWindow):
 
     """Данный метод выполняется каждый раз когда пользователь продолжает колибровку данных"""
     def continue_calibration(self):
-        self.progress_value += 25
+        # Начало чтения порта
+        read_start = self.port_reader.start_read()
+        if read_start:
+            time.sleep(self.sleeping_time)
+
+            # Сохранение позиционных данных
+            raw_dim = self.port_reader.stop_read()
+            self.position_data.append(accel.form_row(raw_dim))
+        else:
+            message = 'Не удалось начать чтение данных'
+            error.show_error(message)
+            self.progress_value = 0
+            self.calibrationWidjet.hide()
+            return
+
+        self.progress_value += self.progress_addition[self.eqvView]
         self.progressBar.setValue(self.progress_value)
-        if self.progress_value == 100:
+
+        if self.progress_value >= 100:
+
+            raw_data = accel.form_raw_data(self.position_data)
+            self.matrix = accel.calibrate_accelerometer(raw_data, self.max_allowance, self.accelerometer_allowance)
             self.calibrationWidjet.hide()
             self.resultsWidjet.show()
             self.show_calculated_matrix()
 
     """Этот метод отвечает за вывод готовой вычисленной матрицы для устройства, которую
-    возможно перенести в оперативную или в постаянную память устройства"""
+    возможно перенести в оперативную или в постоянную память устройства"""
     def show_calculated_matrix(self):
         text = ''
         for mat_str in self.matrix:
@@ -122,6 +154,24 @@ class MainWindow(QMainWindow):
     """Данный метод используется для открытия и закрытия общения с COM портом"""
     def open_close_com_port(self):
         if self.open_com:
+            # Настройки порта
+            port = self.comPort.value()
+            baud_rate = self.speedMean.value()
+            port_seted = self.port_reader.set_port(port, baud_rate)
+            if not port_seted:
+                message = 'Настройки порта не могут быть совершены'
+                error.show_error(message)
+                return
+
+            #Открытие порта для работы с ним
+            port_opened = self.port_reader.connect()
+            if not port_opened:
+                message = 'Открыть порт для работы не возможно, проверьте его доступность'
+                error.show_error(message)
+                return
+            else:
+                print('Suck')
+
             self.openCloseCom.setText('Закрыть порт')
 
             port_description = self.ports[self.comPort.currentIndex()].description

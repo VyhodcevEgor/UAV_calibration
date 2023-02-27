@@ -28,6 +28,7 @@ class PortReader:
                 port=port,
                 baudrate=baud_rate
             )
+            self.__serial_port.close()
             return True
         except serial.serialutil.SerialException:
             return False
@@ -123,10 +124,11 @@ class PortReader:
 
         :return: Открывает порт для чтения и возвращает True, если порт откртыт, иначе False
         """
+        print("try to connect")
         try:
             self.__serial_port.open()
-            return self.__serial_port.is_open()
-        except serial.serialutil.SerialException:
+            return self.__serial_port.is_open
+        except serial.serialutil.SerialException as e:
             return False
 
     def start_read(self):
@@ -158,6 +160,6 @@ class PortReader:
         :return: True - если порт был закрыт успешно, иначе False
         """
 
-        if self.__serial_port.is_open():
+        if self.__serial_port.is_open:
             self.__serial_port.close()
-        return not self.__serial_port.is_open()
+        return not self.__serial_port.is_open

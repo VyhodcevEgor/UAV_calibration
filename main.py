@@ -2,6 +2,7 @@ from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtWidgets
 import serial
+import serial.tools.list_ports as list_ports
 import sys
 import json
 import error
@@ -93,11 +94,11 @@ class MainWindow(QMainWindow):
         if self.console_opened:
             self.consoleButton.setText('Закрыть консоль')
             self.consoleText.show()
-            self.resize(50, 50, 1108, 554)
+            self.resize(1108, 554)
         else:
             self.consoleButton.setText('Открыть консоль')
             self.consoleText.hide()
-            self.resize(50, 50, 800, 554)
+            self.resize(800, 554)
 
     """Данный метод начинает выполнение колибровки при нажатии на соответствующую кнопку"""
     def start_calibration(self):
@@ -190,16 +191,20 @@ class MainWindow(QMainWindow):
                 error.show_error(message)
                 return
             else:
-                print('Suck')
-
-            self.openCloseCom.setText('Закрыть порт')
-
-            port_description = self.ports[self.comPort.currentIndex()].description
-
-            self.comName.setText(port_description)
+                self.openCloseCom.setText('Закрыть порт')
+                port_description = port
+                self.comName.setText(port_description)
         else:
             self.openCloseCom.setText('Открыть порт')
             self.comName.setText('')
+            port_closed = self.port_reader.close_port()
+            if not port_closed:
+                message = 'Порт не может быть закрыт'
+                error.show_error(message)
+            else:
+                self.openCloseCom.setText('Открыть порт')
+                self.comName.setText('')
+
         self.open_com = not self.open_com
 
     """Данный метод формирует структуру json и сохраняет её в файл. В структуре

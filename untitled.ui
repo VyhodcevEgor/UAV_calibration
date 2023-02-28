@@ -9,9 +9,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>800</height>
+    <width>1108</width>
+    <height>554</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>800</width>
+    <height>554</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1108</width>
+    <height>554</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
@@ -297,16 +309,6 @@
       <height>231</height>
      </rect>
     </property>
-    <widget class="QTextBrowser" name="consoleText">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>10</y>
-       <width>771</width>
-       <height>221</height>
-      </rect>
-     </property>
-    </widget>
    </widget>
    <widget class="QLabel" name="label_9">
     <property name="geometry">
@@ -487,13 +489,23 @@
      <string>Допустимая погрешность</string>
     </property>
    </widget>
+   <widget class="QTextBrowser" name="consoleText">
+    <property name="geometry">
+     <rect>
+      <x>550</x>
+      <y>0</y>
+      <width>551</width>
+      <height>221</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1108</width>
      <height>21</height>
     </rect>
    </property>

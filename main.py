@@ -93,13 +93,11 @@ class MainWindow(QMainWindow):
         if self.console_opened:
             self.consoleButton.setText('Закрыть консоль')
             self.consoleText.show()
-            self.setGeometry(50, 50, 800, 600)
+            self.resize(50, 50, 1108, 554)
         else:
             self.consoleButton.setText('Открыть консоль')
             self.consoleText.hide()
-            self.setGeometry(50, 50, 800, 330)
-
-        print(self.consoleButton)
+            self.resize(50, 50, 800, 554)
 
     """Данный метод начинает выполнение колибровки при нажатии на соответствующую кнопку"""
     def start_calibration(self):

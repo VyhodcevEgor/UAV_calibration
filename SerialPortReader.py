@@ -7,6 +7,9 @@ from DataTypes import CAServicesIDE
 from DataTypes import IBCMReconfigCMDt
 from DataTypes import IBCMbConfPayloadS
 from DataTypes import IBCMAllMeasPayloads
+from DataTypes import MagCalibParseMessageAPI
+from DataTypes import ICALIBGYRACCParseMessageAPI
+from DataTypes import SensorIndicatorType
 
 
 class PortReader:
@@ -15,19 +18,19 @@ class PortReader:
         self.__reading_thread = None
         self.__stop_thread = False
         self.__payloads = []
+        self.__gyroscope = []
+        self.__accelerometer = []
+        self.__magnetometer = []
+        self.__indicator_type = None
 
     def set_port(self, port, baud_rate):
         """
-
         :param port: Номер ком порта
         :param baud_rate: Скорость общения с ком портом
         :return: True если настрйока и подключение к порту были успешны, иначе False
         """
         try:
-            self.__serial_port = serial.Serial(
-                port=port,
-                baudrate=baud_rate
-            )
+            self.__serial_port = serial.Serial(port=port, baudrate=baud_rate)
             self.__serial_port.close()
             return True
         except serial.serialutil.SerialException:
@@ -37,31 +40,33 @@ class PortReader:
 
         self.__stop_thread = False
         self.__payloads = []
-        
+
+        self.__gyroscope = []
+        self.__accelerometer = []
+        self.__magnetometer = []
+
         x_conf_pack = IBCMbConfPayloadS(
             baud_rate=self.__serial_port.baudrate,
             ul_dt_us=10000,
-            el_pack_id_for_default_request=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvSendAllData
+            el_pack_id_for_default_request=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvSendAllData,
         )
         controller_setting_command = x_conf_pack.generate_hex(
             sender_id=CAServicesIDE.CA_ID_iBCM,
             recipient_id=CAServicesIDE.CA_ID_iBCM,
             pack_id=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvReadConfPack,
-            crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
+            crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
         )
 
         self.__serial_port.write(controller_setting_command)
         time.sleep(0.2)
 
-        x_conf_pack = IBCMReconfigCMDt(
-            is_need_reconfig=1
-        )
+        x_conf_pack = IBCMReconfigCMDt(is_need_reconfig=1)
 
         controller_set_command = x_conf_pack.generate_hex(
             sender_id=CAServicesIDE.CA_ID_iBCM,
             recipient_id=CAServicesIDE.CA_ID_iBCM,
             pack_id=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvReadConfPack,
-            crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
+            crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
         )
 
         self.__serial_port.write(controller_set_command)
@@ -86,32 +91,34 @@ class PortReader:
                 data = bytes.fromhex(byte_line)
                 self.__payloads.append(IBCMAllMeasPayloads(data))
 
+                self.__gyroscope.append(self.__payloads[-1].aGyr)
+                self.__accelerometer.append(self.__payloads[-1].aAcc)
+                self.__magnetometer.append(self.__payloads[-1].aMag)
+
         else:
 
             x_conf_pack = IBCMbConfPayloadS(
                 baud_rate=self.__serial_port.baudrate,
                 ul_dt_us=0,
-                el_pack_id_for_default_request=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvSendAllData
+                el_pack_id_for_default_request=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvSendAllData,
             )
             controller_setting_command = x_conf_pack.generate_hex(
                 sender_id=CAServicesIDE.CA_ID_iBCM,
                 recipient_id=CAServicesIDE.CA_ID_iBCM,
                 pack_id=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvReadConfPack,
-                crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
+                crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
             )
 
             self.__serial_port.write(controller_setting_command)
             time.sleep(0.2)
 
-            x_conf_pack = IBCMReconfigCMDt(
-                is_need_reconfig=1
-            )
+            x_conf_pack = IBCMReconfigCMDt(is_need_reconfig=1)
 
             controller_set_command = x_conf_pack.generate_hex(
                 sender_id=CAServicesIDE.CA_ID_iBCM,
                 recipient_id=CAServicesIDE.CA_ID_iBCM,
                 pack_id=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvReadConfPack,
-                crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
+                crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
             )
 
             self.__serial_port.write(controller_set_command)
@@ -128,15 +135,18 @@ class PortReader:
         try:
             self.__serial_port.open()
             return self.__serial_port.is_open
-        except serial.serialutil.SerialException as e:
+        except serial.serialutil.SerialException:
             return False
 
-    def start_read(self):
+    def start_read(self, read_type: SensorIndicatorType):
         """
+        Пример вызова self.start_read(SensorIndicatorType.Mag) - считать показатели магнитометра
         Начинает чтение, если до этого порт был открыт
+        :param read_type: Параметр, указывающий, какие данные считать
         :return: True, если чтение началось, инчае False
         """
         if self.__serial_port.isOpen():
+            self.__indicator_type = read_type
             self.__reading_thread = threading.Thread(target=self.__read, daemon=True)
             self.__reading_thread.start()
             print(self.__reading_thread)
@@ -147,12 +157,20 @@ class PortReader:
     def stop_read(self):
         """
         Заканчивает чтение
-        :return: Возвращает все считанные данные.
+        :return: Возвращает все считанные данные, в зависимости от read_type, заданного в start_read.
+        Если тип был не задан, то возвращает None
         """
         print(self.__reading_thread)
         self.__stop_thread = True
         self.__reading_thread.join()
-        return self.__payloads
+        if self.__indicator_type == SensorIndicatorType.Gyr:
+            return self.__gyroscope
+        elif self.__indicator_type == SensorIndicatorType.Acc:
+            return self.__accelerometer
+        elif self.__indicator_type == SensorIndicatorType.Mag:
+            return self.__magnetometer
+        else:
+            return None
 
     def close_port(self):
         """

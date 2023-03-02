@@ -72,6 +72,85 @@ class CAServicesIDE:
     CA_SERVICE_MAX_NUMB = 17
 
 
+class SensorIndicatorType:
+    Gyr = "Гироскоп"
+    Acc = "Акселерометр"
+    Mag = "Магнитометр"
+
+
+class MagCalibParseMessageAPI:
+    MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB = 0
+    MAGCALIB_PARSE_MESSAGE_SEND_MATRIX_CALIB = 1
+    MAGCALIB_PARSE_MESSAGE_READ_MATRIX_OFFSET = 2
+    MAGCALIB_PARSE_MESSAGE_SEND_MATRIX_OFFSET = 3
+    # Без полезной нагрузки
+    MAGCALIB_PARSE_MESSAGE_WRITE_IN_EEPROM = 4
+    # Без полезной нагрузки
+    MAGCALIB_PARSE_MESSAGE_RESET_MATRIX_ALL = 5
+    MAGCALIB_PARSE_MESSAGE_API_MAX_NUMB = 6
+
+
+"""
+# Полезная нагрузка сообщения MAGCALIB_PARSE_MESSAGE_SEND_MATRIX_CALIB
+float a2MemAlloc[3][3];
+# Полезная нагрузка сообщения MAGCALIB_PARSE_MESSAGE_SEND_MATRIX_OFFSET
+float a2MemAlloc[3][1];
+"""
+
+
+class ICALIBGYRACCParseMessageAPI:
+    # Секция для взаимодействия с калибровочной матрицей полиномов гироскопа
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_PC_SendRequestPolyCalibMat = 0
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_PC_ReadPolyCalibMat = 1
+    # Используем 2, 3
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_ReadPolyCalibMat = 2
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_SendPolyCalibMat = 3
+
+    # Секция для взаимодействия с матрицей полиномов смещений гироскопа
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_PC_SendRequestPolyOffsetMat = 4
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_PC_ReadPolyOffsetMat = 5
+    # Используем 6, 7
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_ReadPolyOffsetMat = 6
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_SendPolyOffsetMat = 7
+
+    # Секция для взаимодействия с динамической матрицей полиномов гироскопа
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_PC_SendRequestPolyDynamicMat = 8
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_PC_ReadPolyDynamicMat = 9
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_ReadPolyDynamicMat = 10
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_SendPolyDynamicMat = 11
+
+    # Секция для взаимодействия с калибровочной матрицей полиномов акселерометра
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_PC_SendRequestPolyCalibMat = 12
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_PC_ReadPolyCalibMat = 13
+    # Используем 14, 15
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_ReadPolyCalibMat = 14
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_SendPolyCalibMat = 15
+
+    # Секция для взаимодействия с матрицей полиномов смещений акселерометра
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_PC_SendRequestPolyOffsetMat = 16
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_PC_ReadPolyOffsetMat = 17
+    # Используем 18-25
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_ReadPolyOffsetMat = 18
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_SendPolyOffsetMat = 19
+
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_RecalculatePolyAll = 20
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_RecalculatePolyAll = 21
+
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_WritePolyInEEPROM = 22
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_WritePolyInEEPROM = 23
+
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_ResetPolyAll = 24
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_ResetPolyAll = 25
+    # Используем 28, 29, 31
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_PcSendPolyInMCU = 26
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_PcSendRequestWriteInEEPROMFromRAM = 27
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_McuCopyPolyInEEPROMFromRAM = 28
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_McuRecalculatePoly2Mat = 29
+    ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_PcSendRequestToRecalculatePoly2Mat = 30
+
+    ICALIB_GYRACC_PARSE_MESSAGE_API_MAX_NUMB = 31
+
+
 class IBCMReconfigCMDt:
     def __init__(self, is_need_reconfig):
         self.is_need_reconfig = is_need_reconfig
@@ -144,18 +223,18 @@ class IBCMAllMeasPayloads:
         self.aGyr = [
             struct.unpack("f", bytes_data[28:32])[0],
             struct.unpack("f", bytes_data[32:36])[0],
-            struct.unpack("f", bytes_data[36:40])[0]
+            struct.unpack("f", bytes_data[36:40])[0],
         ]
         self.aAcc = [
             struct.unpack("f", bytes_data[40:44])[0],
             struct.unpack("f", bytes_data[44:48])[0],
-            struct.unpack("f", bytes_data[48:52])[0]
+            struct.unpack("f", bytes_data[48:52])[0],
         ]
         self.gyrAccTemperature = struct.unpack("f", bytes_data[52:56])[0]
         self.aMag = [
             struct.unpack("f", bytes_data[56:60])[0],
             struct.unpack("f", bytes_data[60:64])[0],
-            struct.unpack("f", bytes_data[64:68])[0]
+            struct.unpack("f", bytes_data[64:68])[0],
         ]
         self.gyrAccTemperature = struct.unpack("f", bytes_data[68:72])[0]
         self.controlSumm = bytes_data[72::]

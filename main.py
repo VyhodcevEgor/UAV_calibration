@@ -52,14 +52,11 @@ class MainWindow(QMainWindow):
         self.actionSave.triggered.connect(self.save_matrix_in_file)
         self.actionLoad.triggered.connect(self.load_matrix_from_file)
 
-        types = ['Тип 1', 'Тип 2']
         views = [indicT.Acc, indicT.Gyr, indicT.Mag]
-        #self.ports = list_ports.comports()
         port_names = self.serial_ports()
         speeds = ['115200']
 
         # Заполнение необходимых полей при инициализации
-        self.eqvType.addItems(types)
         self.eqvView.addItems(views)
         self.comPort.addItems(port_names)
         self.speedMean.addItems(speeds)

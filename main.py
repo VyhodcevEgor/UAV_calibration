@@ -1,6 +1,7 @@
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtWidgets
+from DataTypes import SensorIndicatorType as indicT
 import serial
 import serial.tools.list_ports as list_ports
 import sys
@@ -9,7 +10,6 @@ import error
 import accelerometer as accel
 import SerialPortReader as ports
 import time
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -21,9 +21,9 @@ class MainWindow(QMainWindow):
         self.console_opened = True
         self.progress_value = 0
         self.progress_addition = {
-            'Акселерометр': 16.7,
-            'Гироскоп': 16.7,
-            'Магнитометр': 4.2
+            indicT.Acc: 16.7,
+            indicT.Gyr: 16.7,
+            indicT.Mag: 4.2
         }
         self.matrix = [[4, 1, 5, 6, 3, 6], [4, 1, 5, 6, 3, 6], [4, 1, 5, 6, 3, 6]]
         self.position_data = []
@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         self.actionLoad.triggered.connect(self.load_matrix_from_file)
 
         types = ['Тип 1', 'Тип 2']
-        views = ['Акселерометр', 'Гироскоп', 'Магнитометр']
+        views = [indicT.Acc, indicT.Gyr, indicT.Mag]
         #self.ports = list_ports.comports()
         port_names = self.serial_ports()
         speeds = ['115200']
@@ -118,7 +118,7 @@ class MainWindow(QMainWindow):
     """Данный метод выполняется каждый раз когда пользователь продолжает колибровку данных"""
     def continue_calibration(self):
         # Начало чтения порта
-        read_start = self.port_reader.start_read()
+        read_start = self.port_reader.start_read(self.eqvView.currentText())
         if read_start:
             time.sleep(self.sleeping_time)
 

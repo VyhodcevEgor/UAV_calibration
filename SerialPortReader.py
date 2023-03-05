@@ -36,6 +36,23 @@ class PortReader:
         except serial.serialutil.SerialException:
             return False
 
+    """
+    def smt(self):
+        x_conf_pack = IBCMbConfPayloadS(
+            baud_rate=self.__serial_port.baudrate,
+            ul_dt_us=10000,
+            el_pack_id_for_default_request=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvSendAllData,
+        )
+        controller_setting_command = x_conf_pack.generate_hex(
+            sender_id=ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_PC_SendRequestPolyOffsetMat,
+            recipient_id=ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_PC_SendRequestPolyOffsetMat,
+            pack_id=MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB,
+            crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
+        )
+        print(controller_setting_command)
+        pass
+    """
+
     def __read(self):
 
         self.__stop_thread = False
@@ -181,3 +198,10 @@ class PortReader:
         if self.__serial_port.is_open:
             self.__serial_port.close()
         return not self.__serial_port.is_open
+
+"""
+d = PortReader()
+d.set_port("COM2", 1042003526)
+d.connect()
+d.smt()
+"""

@@ -85,8 +85,10 @@ class MagCalibParseMessageAPI:
     MAGCALIB_PARSE_MESSAGE_SEND_MATRIX_OFFSET = 3
     # Без полезной нагрузки
     MAGCALIB_PARSE_MESSAGE_WRITE_IN_EEPROM = 4
+
     # Без полезной нагрузки
     MAGCALIB_PARSE_MESSAGE_RESET_MATRIX_ALL = 5
+
     MAGCALIB_PARSE_MESSAGE_API_MAX_NUMB = 6
 
 
@@ -171,9 +173,7 @@ class IBCMReconfigCMDt:
         header += pack_id_hex
         header += crc_type_hex
         header += struct.pack("I", self.payload_size).hex()
-
         pay_load = struct.pack("I", self.is_need_reconfig).hex()
-
         crc = crc_function(crc_type, bytes.fromhex(pay_load))
         crc = struct.pack("I", crc).hex()
         print(header + pay_load + crc)

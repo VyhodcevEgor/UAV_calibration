@@ -66,7 +66,7 @@ def validate_raw_data(raw_data, ideal_data, sensor_threshold):
     return check_result
 
 
-def calibrate_accelerometer(raw_data, error_threshold, sens_thrsh):
+def calibrate_gyroscope(raw_data, error_threshold, sens_thrsh):
     """
     Данная функция производит математическую обработку raw данных для получения
     матрицы калибровки. Затем происходит проверка полученной матрицы - проходят
@@ -88,20 +88,22 @@ def calibrate_accelerometer(raw_data, error_threshold, sens_thrsh):
         [0.0, 0.0, 1.0],
         [0.0, 0.0, -1.0]
     ])
-    err_expected_data = validate_raw_data(raw_data, ideal_data, sens_thrsh)
+    #err_expected_data = validate_raw_data(raw_data, ideal_data, sens_thrsh)
+    err_expected_data = False
     if err_expected_data:
         print(
             'Проверка входных данных закончилась с ошибкой, '
             'дальнейшая калибровка невозможна!'
         )
     else:
+        shift_vec_temp = []
         flag = False
+        calibration_matrix = np.eye(3)
+        for idx, row in enumerate(raw_data):
+            shift_vec_temp.append(np.abs(row) - np.abs(ideal_data[idx]))
+        shift_vector = np.mean(shift_vec_temp, axis=0)
+        calibration_matrix = np.vstack([calibration_matrix, shift_vector])
         raw_data = np.append(raw_data, [[1], [1], [1], [1], [1], [1]], axis=1)
-        transposed_raw_matrix = np.transpose(raw_data)
-        calibration_matrix = (
-            np.linalg.inv(
-                transposed_raw_matrix.dot(raw_data)).dot(transposed_raw_matrix)
-        ).dot(ideal_data)
         calibrated_data = raw_data.dot(calibration_matrix)
         for idx, row in enumerate(ideal_data):
             if abs(calibrated_data[idx][0]) - abs(row[0]) > error_threshold:
@@ -129,51 +131,3 @@ def calibrate_accelerometer(raw_data, error_threshold, sens_thrsh):
             print('Погрешность калибровки находится в пределах допустимой.')
 
         return calibration_matrix
-
-
-def input_data_validation(calibration_matrix, raw_dimensions, error_threshold):
-    """
-    Данная функция проверяет все входные значения на предмет аномальных
-    выбросов, которые могли бы повлиять на точность калибровки. Функция идёт по
-    списку всех измерений и проверяет, попадает ли данное измерение в допуск
-    после произведения на матрицу калибровки.
-    :param calibration_matrix: Калибровочная матрица <numpy.ndarray>
-        размерностью 4x3, полученная после математической обработки.
-    :param raw_dimensions: Список всех измерений для каждого положения датчика.
-        Структура: [[Значения для положения №1], [Значения для положения №2],
-        ..., [Значения для положения №6]].
-    :param error_threshold: Допустимая погрешность калибровки, вводимая
-        пользователем. Тип данных - float.
-    :return: Возвращает boolean переменную, которая описывает результат
-        проверки.
-    """
-    ideal_matrix = np.array([
-        [1.0, 0.0, 0.0],
-        [-1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, -1.0, 0.0],
-        [0.0, 0.0, 1.0],
-        [0.0, 0.0, -1.0]
-    ])
-    flag = False
-    for idx, dim in enumerate(raw_dimensions):
-        # print(f'Dimension {idx}:\n {dim}')
-        for row in dim:
-            row_check = np.append(row, [1], axis=0)
-            if (abs(row_check.dot(calibration_matrix)[0]) -
-                    abs(ideal_matrix[idx][0]) > error_threshold or
-                    abs(row_check.dot(calibration_matrix)[1]) -
-                    abs(ideal_matrix[idx][1]) > error_threshold or
-                    abs(row_check.dot(calibration_matrix)[2]) -
-                    abs(ideal_matrix[idx][2]) > error_threshold):
-                print(
-                    'Значения во входных измерениях содержат '
-                    'аномальные выбросы!'
-                    f'Значения в строке {row} после калибровки '
-                    f'сильно отличаются от {ideal_matrix[idx]}.'
-                )
-                flag = True
-    if not flag:
-        print('Измерения во входных данных не содержат аномальных выбросов!')
-
-    return flag

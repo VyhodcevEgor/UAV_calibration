@@ -227,9 +227,10 @@ class PortReader:
         return not self.__serial_port.is_open
 
 
-d = PortReader()
+"""d = PortReader()
 d.set_port("COM2", 1042003526)
 d.connect()
 d.start_read(SensorIndicatorType.Gyr)
 d.write_magnetometer_offset_matrix([[0.152062505483627], [-0.0367708317935467], [0.0129895834252238]])
 d.stop_read()
+"""

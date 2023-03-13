@@ -100,6 +100,90 @@ float a2MemAlloc[3][1];
 """
 
 
+class MagnetometerOffsetMatrix:
+
+    def __init__(self, matrix):
+        self.__payload_size = 12
+        self.__matrix = matrix
+
+    def rewrite_matrix(self, matrix):
+        self.__matrix = matrix
+
+    def __matrix_to_list(self):
+        temp = []
+        for elem in self.__matrix:
+            temp.extend(elem)
+        return temp
+
+    def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
+        start_frame = "AAAA"
+
+        sender_id_hex = struct.pack("B", sender_id).hex()
+        recipient_id_hex = struct.pack("B", recipient_id).hex()
+        pack_id_hex = struct.pack("I", pack_id).hex()
+        crc_type_hex = struct.pack("I", crc_type).hex()
+
+        header = start_frame
+        header += sender_id_hex
+        header += recipient_id_hex
+        header += pack_id_hex
+        header += crc_type_hex
+        header += struct.pack("I", self.__payload_size).hex()
+
+        list_matrix = self.__matrix_to_list()
+        pay_load = ""
+        for element in list_matrix:
+            pay_load += struct.pack("f", element).hex()
+
+        crc = crc_function(crc_type, bytes.fromhex(pay_load))
+        print(crc)
+        crc = struct.pack("I", crc).hex()
+        print(crc)
+        return header + pay_load + crc
+
+
+class MagnetometerCalibrationMatrix:
+
+    def __init__(self, matrix):
+        self.__payload_size = 36
+        self.__matrix = matrix
+
+    def rewrite_matrix(self, matrix):
+        self.__matrix = matrix
+
+    def __matrix_to_list(self):
+        temp = []
+        for elem in self.__matrix:
+            temp.extend(elem)
+        return temp
+
+    def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
+        start_frame = "AAAA"
+
+        sender_id_hex = struct.pack("B", sender_id).hex()
+        recipient_id_hex = struct.pack("B", recipient_id).hex()
+        pack_id_hex = struct.pack("I", pack_id).hex()
+        crc_type_hex = struct.pack("I", crc_type).hex()
+
+        header = start_frame
+        header += sender_id_hex
+        header += recipient_id_hex
+        header += pack_id_hex
+        header += crc_type_hex
+        header += struct.pack("I", self.__payload_size).hex()
+
+        list_matrix = self.__matrix_to_list()
+        pay_load = ""
+        for element in list_matrix:
+            pay_load += struct.pack("f", element).hex()
+
+        crc = crc_function(crc_type, bytes.fromhex(pay_load))
+        print(crc)
+        crc = struct.pack("I", crc).hex()
+        print(crc)
+        return header + pay_load + crc
+
+
 class ICALIBGYRACCParseMessageAPI:
     # Секция для взаимодействия с калибровочной матрицей полиномов гироскопа
     ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_PC_SendRequestPolyCalibMat = 0
@@ -176,7 +260,6 @@ class IBCMReconfigCMDt:
         pay_load = struct.pack("I", self.is_need_reconfig).hex()
         crc = crc_function(crc_type, bytes.fromhex(pay_load))
         crc = struct.pack("I", crc).hex()
-        print(header + pay_load + crc)
         return header + pay_load + crc
 
 

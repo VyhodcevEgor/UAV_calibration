@@ -8,8 +8,10 @@ from DataTypes import IBCMReconfigCMDt
 from DataTypes import IBCMbConfPayloadS
 from DataTypes import IBCMAllMeasPayloads
 from DataTypes import MagCalibParseMessageAPI
-from DataTypes import ICALIBGYRACCParseMessageAPI
+# from DataTypes import ICALIBGYRACCParseMessageAPI
 from DataTypes import SensorIndicatorType
+from DataTypes import MagnetometerCalibrationMatrix
+from DataTypes import MagnetometerOffsetMatrix
 
 
 class PortReader:
@@ -36,23 +38,6 @@ class PortReader:
         except serial.serialutil.SerialException:
             return False
 
-    """
-    def smt(self):
-        x_conf_pack = IBCMbConfPayloadS(
-            baud_rate=self.__serial_port.baudrate,
-            ul_dt_us=10000,
-            el_pack_id_for_default_request=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvSendAllData,
-        )
-        controller_setting_command = x_conf_pack.generate_hex(
-            sender_id=ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_PC_SendRequestPolyOffsetMat,
-            recipient_id=ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_PC_SendRequestPolyOffsetMat,
-            pack_id=MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB,
-            crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
-        )
-        print(controller_setting_command)
-        pass
-    """
-
     def __read(self):
 
         self.__stop_thread = False
@@ -74,10 +59,12 @@ class PortReader:
             crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
         )
 
-        self.__serial_port.write(controller_setting_command)
+        self.__serial_port.write(controller_setting_command.encode())
         time.sleep(0.2)
 
-        x_conf_pack = IBCMReconfigCMDt(is_need_reconfig=1)
+        x_conf_pack = IBCMReconfigCMDt(
+            is_need_reconfig=1
+        )
 
         controller_set_command = x_conf_pack.generate_hex(
             sender_id=CAServicesIDE.CA_ID_iBCM,
@@ -85,8 +72,7 @@ class PortReader:
             pack_id=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvReadConfPack,
             crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
         )
-
-        self.__serial_port.write(controller_set_command)
+        self.__serial_port.write(controller_set_command.encode())
         time.sleep(0.2)
 
         this_byte = ""
@@ -126,7 +112,7 @@ class PortReader:
                 crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
             )
 
-            self.__serial_port.write(controller_setting_command)
+            self.__serial_port.write(controller_setting_command.encode())
             time.sleep(0.2)
 
             x_conf_pack = IBCMReconfigCMDt(is_need_reconfig=1)
@@ -138,9 +124,9 @@ class PortReader:
                 crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
             )
 
-            self.__serial_port.write(controller_set_command)
+            self.__serial_port.write(controller_set_command.encode())
 
-            self.__serial_port.close()
+            # self.__serial_port.close()
             time.sleep(0.2)
 
     def connect(self):
@@ -148,10 +134,51 @@ class PortReader:
 
         :return: Открывает порт для чтения и возвращает True, если порт откртыт, иначе False
         """
-        print("try to connect")
+        # print("try to connect")
         try:
             self.__serial_port.open()
             return self.__serial_port.is_open
+        except serial.serialutil.SerialException:
+            return False
+
+    def write_magnetometer_calibration_matrix(self, matrix):
+        """
+
+        :param matrix: калибровочная матриа магнитометра, float [3][3]
+        :return: Статус выполнения записи матрицы
+        """
+        try:
+            magnetometer = MagnetometerCalibrationMatrix(matrix)
+            message = magnetometer.generate_hex(
+                CAServicesIDE.CA_ID_MAG_CALIB,
+                CAServicesIDE.CA_ID_MAG_CALIB,
+                MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB,
+                CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
+            )
+            self.__serial_port.write(message.encode())
+            print(message)
+            return True
+        except serial.serialutil.SerialException:
+            return False
+
+    def write_magnetometer_offset_matrix(self, matrix):
+        """
+
+        :param matrix: матриа смещения, float [3][1]
+        :return: Статус выполнения записи матрицы
+        """
+        try:
+            magnetometer = MagnetometerOffsetMatrix(matrix)
+            message = magnetometer.generate_hex(
+                CAServicesIDE.CA_ID_MAG_CALIB,
+                CAServicesIDE.CA_ID_MAG_CALIB,
+                MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB,
+                CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
+            )
+            print(message)
+            self.__serial_port.write(message.encode())
+
+            return True
         except serial.serialutil.SerialException:
             return False
 
@@ -166,7 +193,7 @@ class PortReader:
             self.__indicator_type = read_type
             self.__reading_thread = threading.Thread(target=self.__read, daemon=True)
             self.__reading_thread.start()
-            print(self.__reading_thread)
+            # print(self.__reading_thread)
             return True
         else:
             return False
@@ -177,7 +204,7 @@ class PortReader:
         :return: Возвращает все считанные данные, в зависимости от read_type, заданного в start_read.
         Если тип был не задан, то возвращает None
         """
-        print(self.__reading_thread)
+        # print(self.__reading_thread)
         self.__stop_thread = True
         self.__reading_thread.join()
         if self.__indicator_type == SensorIndicatorType.Gyr:
@@ -199,9 +226,10 @@ class PortReader:
             self.__serial_port.close()
         return not self.__serial_port.is_open
 
-"""
+
 d = PortReader()
 d.set_port("COM2", 1042003526)
 d.connect()
-d.smt()
-"""
+d.start_read(SensorIndicatorType.Gyr)
+d.write_magnetometer_offset_matrix([[0.152062505483627], [-0.0367708317935467], [0.0129895834252238]])
+d.stop_read()

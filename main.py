@@ -8,6 +8,7 @@ import sys
 import json
 import error
 import accelerometer as accel
+import magnetometer as magnet
 import SerialPortReader as ports
 import time
 
@@ -133,9 +134,25 @@ class MainWindow(QMainWindow):
         self.progressBar.setValue(self.progress_value)
 
         if self.progress_value >= 100:
+            current_indic = self.eqvView.currentText()
 
-            raw_data = accel.form_raw_data(self.position_data)
-            self.matrix = accel.calibrate_accelerometer(raw_data, self.max_allowance, self.accelerometer_allowance)
+            # Расчет матрицы калибровки для определенного типа датчика
+            match current_indic:
+                # Расчет для акселерометра
+                case indicT.Acc:
+                    raw_data = accel.form_raw_data(self.position_data)
+                    self.matrix = accel.calibrate_accelerometer(raw_data, self.max_allowance,
+                                                                self.accelerometer_allowance)
+                # Расчет для магнитометра
+                case indicT.Mag:
+                    ideal_matrix = magnet.form_ideal_matrix(self.magnetometer_allowance)
+                    raw_data = magnet.form_raw_data(self.position_data)
+                    self.matrix = magnet.calibrate_magnetometer(raw_data, ideal_matrix, self.max_allowance,
+                                                                self.magnetometer_allowance)
+                # Расчет для гироскопа
+                case indicT.Gyr:
+                    print('Dumbass')
+
             self.calibrationWidjet.hide()
             self.resultsWidjet.show()
             self.show_calculated_matrix()

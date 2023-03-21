@@ -2,6 +2,9 @@ from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtWidgets
 from DataTypes import SensorIndicatorType as indicT
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QGraphicsPixmapItem
+from PyQt5.QtWidgets import QGraphicsScene
 import serial
 import serial.tools.list_ports as list_ports
 import sys
@@ -34,7 +37,7 @@ class MainWindow(QMainWindow):
         self.magnetometer_allowance = 0 # допуск отклонений магнитометра
         self.max_allowance = 0 # допустимая погрешность калибровки
         self.port_reader = ports.PortReader()
-        self.sleeping_time = 5000
+        self.sleeping_time = 5
 
         # Скрытие и отображение виджитов при инициализации
         if not self.console_opened:
@@ -98,6 +101,20 @@ class MainWindow(QMainWindow):
             self.consoleText.hide()
             self.resize(800, 554)
 
+    def get_image(self, pos_num):
+        current_indic = self.eqvView.currentText()
+
+        match current_indic:
+            case indicT.Acc:
+                image = f'./assets/accAndGyr/{pos_num}.jpeg'
+            case indicT.Mag:
+                print('Dumbass')
+            case indicT.Gyr:
+                image = f'./assets/accAndGyr/{pos_num}.jpeg'
+        img = QPixmap(image)
+
+        return img
+
     """Данный метод начинает выполнение колибровки при нажатии на соответствующую кнопку"""
     def start_calibration(self):
         # Сохранение выбранных пользователем данных
@@ -112,6 +129,8 @@ class MainWindow(QMainWindow):
         self.resultsWidjet.hide()
         self.progress_value = 0
         self.calibrationWidjet.show()
+
+        self.indicPosition.setPixmap(self.get_image(1))
 
     """Данный метод выполняется каждый раз когда пользователь продолжает колибровку данных"""
     def continue_calibration(self):

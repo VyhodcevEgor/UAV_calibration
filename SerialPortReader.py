@@ -59,8 +59,9 @@ class PortReader:
             crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
         )
 
-        self.__serial_port.write(controller_setting_command.encode())
+        self.__serial_port.write(controller_setting_command)
         time.sleep(0.2)
+        time.sleep(2)
 
         x_conf_pack = IBCMReconfigCMDt(
             is_need_reconfig=1
@@ -72,16 +73,21 @@ class PortReader:
             pack_id=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvReadConfPack,
             crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
         )
-        self.__serial_port.write(controller_set_command.encode())
+        self.__serial_port.write(controller_set_command)
         time.sleep(0.2)
+        time.sleep(2)
 
         this_byte = ""
         byte_line = ""
 
         amount_of_bytes = 0
-
+        time.sleep(0.1)
+        # print(self.__serial_port.in_waiting)
+        # print(self.__serial_port.read(size=1))
         while not self.__stop_thread:
             prev_byte = this_byte
+            if self.__serial_port.in_waiting <= 0:
+                break
             this_byte = self.__serial_port.read(size=1).hex()
             byte_line += this_byte
             amount_of_bytes += len(this_byte) // 2
@@ -99,7 +105,6 @@ class PortReader:
                 self.__magnetometer.append(self.__payloads[-1].aMag)
 
         else:
-
             x_conf_pack = IBCMbConfPayloadS(
                 baud_rate=self.__serial_port.baudrate,
                 ul_dt_us=0,
@@ -112,7 +117,7 @@ class PortReader:
                 crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
             )
 
-            self.__serial_port.write(controller_setting_command.encode())
+            self.__serial_port.write(controller_setting_command)
             time.sleep(0.2)
 
             x_conf_pack = IBCMReconfigCMDt(is_need_reconfig=1)
@@ -124,7 +129,7 @@ class PortReader:
                 crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
             )
 
-            self.__serial_port.write(controller_set_command.encode())
+            self.__serial_port.write(controller_set_command)
 
             # self.__serial_port.close()
             time.sleep(0.2)
@@ -155,8 +160,7 @@ class PortReader:
                 MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB,
                 CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
             )
-            self.__serial_port.write(message.encode())
-            print(message)
+            self.__serial_port.write(message)
             return True
         except serial.serialutil.SerialException:
             return False
@@ -175,8 +179,7 @@ class PortReader:
                 MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB,
                 CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
             )
-            print(message)
-            self.__serial_port.write(message.encode())
+            self.__serial_port.write(message)
 
             return True
         except serial.serialutil.SerialException:
@@ -193,7 +196,6 @@ class PortReader:
             self.__indicator_type = read_type
             self.__reading_thread = threading.Thread(target=self.__read, daemon=True)
             self.__reading_thread.start()
-            # print(self.__reading_thread)
             return True
         else:
             return False
@@ -204,15 +206,19 @@ class PortReader:
         :return: Возвращает все считанные данные, в зависимости от read_type, заданного в start_read.
         Если тип был не задан, то возвращает None
         """
-        # print(self.__reading_thread)
         self.__stop_thread = True
         self.__reading_thread.join()
+
+        print(f"Гироскоп {self.__gyroscope}")
+        print(f"Акселерометр {self.__accelerometer}")
+        print(f"Магнитометр {self.__magnetometer}")
+
         if self.__indicator_type == SensorIndicatorType.Gyr:
-            return self.__gyroscope
+            return self.__gyroscope if len(self.__gyroscope) else None
         elif self.__indicator_type == SensorIndicatorType.Acc:
-            return self.__accelerometer
+            return self.__accelerometer if len(self.__accelerometer) else None
         elif self.__indicator_type == SensorIndicatorType.Mag:
-            return self.__magnetometer
+            return self.__magnetometer if len(self.__magnetometer) else None
         else:
             return None
 
@@ -227,10 +233,16 @@ class PortReader:
         return not self.__serial_port.is_open
 
 
-"""d = PortReader()
-d.set_port("COM2", 1042003526)
-d.connect()
-d.start_read(SensorIndicatorType.Gyr)
-d.write_magnetometer_offset_matrix([[0.152062505483627], [-0.0367708317935467], [0.0129895834252238]])
-d.stop_read()
+"""
+d = PortReader()
+print(d.set_port("COM2", 115200))
+print(d.connect())
+time.sleep(1)
+print(d.start_read(SensorIndicatorType.Gyr))
+# time.sleep(1)
+# d.write_magnetometer_offset_matrix([[0.152062505483627], [-0.0367708317935467], [-0.0129895834252238]])
+print("send")
+time.sleep(10)
+res = d.stop_read()
+print(res)
 """

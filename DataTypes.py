@@ -100,6 +100,21 @@ float a2MemAlloc[3][1];
 """
 
 
+def generate_header(sender_id, recipient_id, pack_id, crc_type, payload_size):
+    start_frame = (43690).to_bytes(2, byteorder='little')
+    sender_id_hex = struct.pack("B", sender_id)
+    recipient_id_hex = struct.pack("B", recipient_id)
+    pack_id_hex = struct.pack("I", pack_id)
+    crc_type_hex = struct.pack("I", crc_type)
+    header = start_frame
+    header += sender_id_hex
+    header += recipient_id_hex
+    header += pack_id_hex
+    header += crc_type_hex
+    header += struct.pack("I", payload_size)
+    return header
+
+
 class MagnetometerOffsetMatrix:
 
     def __init__(self, matrix):
@@ -116,19 +131,8 @@ class MagnetometerOffsetMatrix:
         return temp
 
     def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
-        start_frame = "AAAA"
 
-        sender_id_hex = struct.pack("B", sender_id).hex()
-        recipient_id_hex = struct.pack("B", recipient_id).hex()
-        pack_id_hex = struct.pack("I", pack_id).hex()
-        crc_type_hex = struct.pack("I", crc_type).hex()
-
-        header = start_frame
-        header += sender_id_hex
-        header += recipient_id_hex
-        header += pack_id_hex
-        header += crc_type_hex
-        header += struct.pack("I", self.__payload_size).hex()
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, self.__payload_size)
 
         list_matrix = self.__matrix_to_list()
         pay_load = ""
@@ -136,9 +140,12 @@ class MagnetometerOffsetMatrix:
             pay_load += struct.pack("f", element).hex()
 
         crc = crc_function(crc_type, bytes.fromhex(pay_load))
-        print(crc)
-        crc = struct.pack("I", crc).hex()
-        print(crc)
+
+        pay_load = b""
+        for element in list_matrix:
+            pay_load += struct.pack("f", element)
+
+        crc = struct.pack("I", crc)
         return header + pay_load + crc
 
 
@@ -158,19 +165,8 @@ class MagnetometerCalibrationMatrix:
         return temp
 
     def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
-        start_frame = "AAAA"
 
-        sender_id_hex = struct.pack("B", sender_id).hex()
-        recipient_id_hex = struct.pack("B", recipient_id).hex()
-        pack_id_hex = struct.pack("I", pack_id).hex()
-        crc_type_hex = struct.pack("I", crc_type).hex()
-
-        header = start_frame
-        header += sender_id_hex
-        header += recipient_id_hex
-        header += pack_id_hex
-        header += crc_type_hex
-        header += struct.pack("I", self.__payload_size).hex()
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, self.__payload_size)
 
         list_matrix = self.__matrix_to_list()
         pay_load = ""
@@ -178,9 +174,12 @@ class MagnetometerCalibrationMatrix:
             pay_load += struct.pack("f", element).hex()
 
         crc = crc_function(crc_type, bytes.fromhex(pay_load))
-        print(crc)
-        crc = struct.pack("I", crc).hex()
-        print(crc)
+
+        pay_load = b""
+        for element in list_matrix:
+            pay_load += struct.pack("f", element)
+
+        crc = struct.pack("I", crc)
         return header + pay_load + crc
 
 
@@ -240,26 +239,17 @@ class ICALIBGYRACCParseMessageAPI:
 class IBCMReconfigCMDt:
     def __init__(self, is_need_reconfig):
         self.is_need_reconfig = is_need_reconfig
-        self.payload_size = 4
+        self.__payload_size = 4
 
     def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
-        start_frame = "AAAA"
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, self.__payload_size)
 
-        sender_id_hex = struct.pack("B", sender_id).hex()
-        recipient_id_hex = struct.pack("B", recipient_id).hex()
-        pack_id_hex = struct.pack("I", pack_id).hex()
-        crc_type_hex = struct.pack("I", crc_type).hex()
-        # crc = crc_function(4, bytes.fromhex("00C201001027000006000000"))
-
-        header = start_frame
-        header += sender_id_hex
-        header += recipient_id_hex
-        header += pack_id_hex
-        header += crc_type_hex
-        header += struct.pack("I", self.payload_size).hex()
         pay_load = struct.pack("I", self.is_need_reconfig).hex()
+
         crc = crc_function(crc_type, bytes.fromhex(pay_load))
-        crc = struct.pack("I", crc).hex()
+
+        pay_load = struct.pack("I", self.is_need_reconfig)
+        crc = struct.pack("I", crc)
         return header + pay_load + crc
 
 
@@ -268,33 +258,21 @@ class IBCMbConfPayloadS:
         self.baud_rate = baud_rate
         self.ul_dt_us = ul_dt_us
         self.el_pack_id_for_default_request = el_pack_id_for_default_request
-        self.payload_size = 4 + 4 + 4
+        self.__payload_size = 4 + 4 + 4
 
     def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
-        start_frame = "AAAA"
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, self.__payload_size)
 
-        sender_id_hex = struct.pack("B", sender_id).hex()
-        recipient_id_hex = struct.pack("B", recipient_id).hex()
-        pack_id_hex = struct.pack("I", pack_id).hex()
-        crc_type_hex = struct.pack("I", crc_type).hex()
-        # crc = crc_function(4, bytes.fromhex("00C201001027000006000000"))
+        temp_pay_load = struct.pack("I", self.baud_rate).hex()
+        temp_pay_load += struct.pack("I", self.ul_dt_us).hex()
+        temp_pay_load += struct.pack("I", self.el_pack_id_for_default_request).hex()
+        crc = crc_function(crc_type, bytes.fromhex(temp_pay_load))
+        crc = struct.pack("I", crc)
 
-        header = start_frame
-        header += sender_id_hex
-        header += recipient_id_hex
-        header += pack_id_hex
-        header += crc_type_hex
-        header += struct.pack("I", self.payload_size).hex()
-
-        pay_load = struct.pack("I", self.baud_rate).hex()
-        pay_load += struct.pack("I", self.ul_dt_us).hex()
-        pay_load += struct.pack("I", self.el_pack_id_for_default_request).hex()
-
-        crc = crc_function(crc_type, bytes.fromhex(pay_load))
-        crc = struct.pack("I", crc).hex()
-
+        pay_load = struct.pack("I", self.baud_rate)
+        pay_load += struct.pack("I", self.ul_dt_us)
+        pay_load += struct.pack("I", self.el_pack_id_for_default_request)
         return header + pay_load + crc
-        # print(struct.pack("I", self.el_pack_id_for_default_request + self.ul_dt_us + self.baud_rate).hex())
 
 
 class IBCMAllMeasPayloads:

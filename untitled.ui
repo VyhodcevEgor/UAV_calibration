@@ -197,7 +197,7 @@
       <enum>Qt::RichText</enum>
      </property>
      <property name="pixmap">
-      <pixmap>:/newPrefix/1.jpg</pixmap>
+      <pixmap resource="assets/resource.qrc">:/newPrefix/1.jpg</pixmap>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>

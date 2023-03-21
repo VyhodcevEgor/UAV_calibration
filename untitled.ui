@@ -396,9 +396,9 @@
    <widget class="QTextBrowser" name="consoleText">
     <property name="geometry">
      <rect>
-      <x>550</x>
+      <x>620</x>
       <y>0</y>
-      <width>551</width>
+      <width>481</width>
       <height>221</height>
      </rect>
     </property>
@@ -497,6 +497,19 @@
       </rect>
      </property>
     </widget>
+   </widget>
+   <widget class="QPushButton" name="reloadButton">
+    <property name="geometry">
+     <rect>
+      <x>530</x>
+      <y>40</y>
+      <width>81</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Обновить</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

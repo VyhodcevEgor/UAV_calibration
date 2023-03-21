@@ -181,99 +181,26 @@
       <bool>false</bool>
      </property>
     </widget>
-   </widget>
-   <widget class="QWidget" name="resultsWidjet" native="true">
-    <property name="geometry">
-     <rect>
-      <x>199</x>
-      <y>229</y>
-      <width>581</width>
-      <height>281</height>
-     </rect>
-    </property>
-    <widget class="QLabel" name="label_6">
+    <widget class="QLabel" name="indicPosition">
      <property name="geometry">
       <rect>
-       <x>0</x>
-       <y>0</y>
-       <width>251</width>
-       <height>16</height>
+       <x>146</x>
+       <y>52</y>
+       <width>231</width>
+       <height>141</height>
       </rect>
      </property>
      <property name="text">
-      <string>Вычесленные матрицы</string>
+      <string/>
      </property>
-    </widget>
-    <widget class="QLabel" name="label_7">
-     <property name="geometry">
-      <rect>
-       <x>320</x>
-       <y>0</y>
-       <width>251</width>
-       <height>16</height>
-      </rect>
+     <property name="textFormat">
+      <enum>Qt::RichText</enum>
      </property>
-     <property name="text">
-      <string>Матрицы оборудования</string>
+     <property name="pixmap">
+      <pixmap>:/newPrefix/1.jpg</pixmap>
      </property>
-    </widget>
-    <widget class="QLabel" name="label_8">
-     <property name="geometry">
-      <rect>
-       <x>280</x>
-       <y>90</y>
-       <width>21</width>
-       <height>16</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>ОЗУ</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="transferButton">
-     <property name="geometry">
-      <rect>
-       <x>270</x>
-       <y>110</y>
-       <width>41</width>
-       <height>31</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>-&gt;</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="transferPZUButton">
-     <property name="geometry">
-      <rect>
-       <x>210</x>
-       <y>230</y>
-       <width>161</width>
-       <height>31</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Перенести в ПЗУ</string>
-     </property>
-    </widget>
-    <widget class="QTextEdit" name="calculatedText">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>20</y>
-       <width>261</width>
-       <height>191</height>
-      </rect>
-     </property>
-    </widget>
-    <widget class="QTextEdit" name="equipmentText">
-     <property name="geometry">
-      <rect>
-       <x>320</x>
-       <y>20</y>
-       <width>261</width>
-       <height>191</height>
-      </rect>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </widget>
@@ -476,6 +403,101 @@
      </rect>
     </property>
    </widget>
+   <widget class="QWidget" name="resultsWidjet" native="true">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>220</y>
+      <width>601</width>
+      <height>291</height>
+     </rect>
+    </property>
+    <widget class="QLabel" name="label_6">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>251</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Вычесленные матрицы</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_7">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>0</y>
+       <width>251</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Матрицы оборудования</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_8">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>90</y>
+       <width>21</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>ОЗУ</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="transferButton">
+     <property name="geometry">
+      <rect>
+       <x>270</x>
+       <y>110</y>
+       <width>41</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>-&gt;</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="transferPZUButton">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>230</y>
+       <width>161</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Перенести в ПЗУ</string>
+     </property>
+    </widget>
+    <widget class="QTextEdit" name="calculatedText">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>20</y>
+       <width>261</width>
+       <height>191</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QTextEdit" name="equipmentText">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>20</y>
+       <width>261</width>
+       <height>191</height>
+      </rect>
+     </property>
+    </widget>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -514,6 +536,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="assets/resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

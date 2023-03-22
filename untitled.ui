@@ -168,7 +168,7 @@
      </property>
      <property name="geometry">
       <rect>
-       <x>190</x>
+       <x>240</x>
        <y>250</y>
        <width>151</width>
        <height>23</height>
@@ -199,8 +199,24 @@
      <property name="pixmap">
       <pixmap resource="assets/resource.qrc">:/newPrefix/1.jpg</pixmap>
      </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="backButton">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>250</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Назад</string>
      </property>
     </widget>
    </widget>
@@ -406,7 +422,7 @@
    <widget class="QWidget" name="resultsWidjet" native="true">
     <property name="geometry">
      <rect>
-      <x>190</x>
+      <x>200</x>
       <y>220</y>
       <width>601</width>
       <height>291</height>

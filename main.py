@@ -58,6 +58,7 @@ class MainWindow(QMainWindow):
         self.actionSave.triggered.connect(self.save_matrix_in_file)
         self.actionLoad.triggered.connect(self.load_matrix_from_file)
         self.reloadButton.clicked.connect(self.serial_ports)
+        self.backButton.clicked.connect(self.remove_last_step)
 
         views = [indicT.Acc, indicT.Gyr, indicT.Mag]
         self.serial_ports()
@@ -201,11 +202,18 @@ class MainWindow(QMainWindow):
                 case indicT.Gyr:
                     print('Dumbass')
 
-            self.consoleText.setText('Расчет матриц завершен.')
             self.reload_calib = False
             self.calibrationWidjet.hide()
-            self.resultsWidjet.show()
-            self.show_calculated_matrix()
+
+            if self.matrix is not None:
+                self.consoleText.setText('Расчет матриц завершен.')
+                self.resultsWidjet.show()
+                self.show_calculated_matrix()
+            else:
+                message = 'Расчет матриц не может быть произведен'
+                error.show_error(message)
+                self.consoleText.setText(message)
+
 
     """Этот метод отвечает за вывод готовой вычисленной матрицы для устройства, которую
     возможно перенести в оперативную или в постоянную память устройства"""
@@ -323,6 +331,14 @@ class MainWindow(QMainWindow):
                               ' что матрица присвоена свойству matrix'
                     error.show_error(message)
                     return
+
+    def remove_last_step(self):
+        try:
+            last_mean = self.position_data.pop()
+            self.consoleText.setText(f'Значение удалено: \n{last_mean}')
+        except:
+            message = 'Это первый шаг, повторите действия изображенные на рисунке и нажмите кнопку "Далее"'
+            error.show_error(message)
 
 
 if __name__ == "__main__":

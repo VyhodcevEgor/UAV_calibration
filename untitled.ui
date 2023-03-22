@@ -168,7 +168,7 @@
      </property>
      <property name="geometry">
       <rect>
-       <x>190</x>
+       <x>240</x>
        <y>250</y>
        <width>151</width>
        <height>23</height>
@@ -199,8 +199,24 @@
      <property name="pixmap">
       <pixmap resource="assets/resource.qrc">:/newPrefix/1.jpg</pixmap>
      </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="backButton">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>250</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Назад</string>
      </property>
     </widget>
    </widget>
@@ -396,9 +412,9 @@
    <widget class="QTextBrowser" name="consoleText">
     <property name="geometry">
      <rect>
-      <x>550</x>
+      <x>620</x>
       <y>0</y>
-      <width>551</width>
+      <width>481</width>
       <height>221</height>
      </rect>
     </property>
@@ -406,7 +422,7 @@
    <widget class="QWidget" name="resultsWidjet" native="true">
     <property name="geometry">
      <rect>
-      <x>190</x>
+      <x>200</x>
       <y>220</y>
       <width>601</width>
       <height>291</height>
@@ -497,6 +513,19 @@
       </rect>
      </property>
     </widget>
+   </widget>
+   <widget class="QPushButton" name="reloadButton">
+    <property name="geometry">
+     <rect>
+      <x>530</x>
+      <y>40</y>
+      <width>81</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Обновить</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

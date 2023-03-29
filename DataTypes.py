@@ -1,5 +1,7 @@
 import struct
 
+READ_TIMEOUT = 0.5
+
 
 def crc_function(crc_type, buf):
     if crc_type == 0:
@@ -277,25 +279,49 @@ class IBCMbConfPayloadS:
 
 class IBCMAllMeasPayloads:
     def __init__(self, bytes_data):
-        self.header = bytes_data[0:16]
+        self.__bytes_data = bytes_data
+        self.start_frame = bytes_data[0:16]
         self.timeStamp = struct.unpack("I", bytes_data[16:20])[0]
         self.statusFlags = struct.unpack("I", bytes_data[20:24])[0]
         self.ulDt_us = struct.unpack("I", bytes_data[24:28])[0]
+
         self.aGyr = [
             struct.unpack("f", bytes_data[28:32])[0],
             struct.unpack("f", bytes_data[32:36])[0],
             struct.unpack("f", bytes_data[36:40])[0],
         ]
+
         self.aAcc = [
             struct.unpack("f", bytes_data[40:44])[0],
             struct.unpack("f", bytes_data[44:48])[0],
             struct.unpack("f", bytes_data[48:52])[0],
         ]
+
         self.gyrAccTemperature = struct.unpack("f", bytes_data[52:56])[0]
+
         self.aMag = [
             struct.unpack("f", bytes_data[56:60])[0],
             struct.unpack("f", bytes_data[60:64])[0],
             struct.unpack("f", bytes_data[64:68])[0],
         ]
+
         self.gyrAccTemperature = struct.unpack("f", bytes_data[68:72])[0]
-        self.controlSumm = bytes_data[72::]
+
+        self.control_sum = bytes_data[72::]
+
+    def reset_values(self, aGyr, aAcc, aMag):
+        self.aGyr = aGyr
+        self.aAcc = aAcc
+        self.aMag = aMag
+
+    def generate_hex(self):
+        result = self.__bytes_data[0:28]
+
+        aGyr = struct.pack("fff", self.aGyr[0], self.aGyr[1], self.aGyr[2])
+        aAcc = struct.pack("fff", self.aAcc[0], self.aAcc[1], self.aAcc[2])
+        aMag = struct.pack("fff", self.aMag[0], self.aMag[1], self.aMag[2])
+        result += aGyr + aAcc
+        result += self.__bytes_data[52:56]
+        result += aMag
+        result += self.__bytes_data[68::]
+        return result

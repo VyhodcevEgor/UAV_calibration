@@ -12,6 +12,7 @@ from DataTypes import MagCalibParseMessageAPI
 from DataTypes import SensorIndicatorType
 from DataTypes import MagnetometerCalibrationMatrix
 from DataTypes import MagnetometerOffsetMatrix
+from DataTypes import READ_TIMEOUT
 
 
 class PortReader:
@@ -32,7 +33,7 @@ class PortReader:
         :return: True если настрйока и подключение к порту были успешны, иначе False
         """
         try:
-            self.__serial_port = serial.Serial(port=port, baudrate=baud_rate)
+            self.__serial_port = serial.Serial(port=port, baudrate=baud_rate, timeout=READ_TIMEOUT)
             self.__serial_port.close()
             return True
         except serial.serialutil.SerialException:
@@ -47,6 +48,7 @@ class PortReader:
         self.__accelerometer = []
         self.__magnetometer = []
 
+        # Команда приминения конфигураций
         x_conf_pack = IBCMbConfPayloadS(
             baud_rate=self.__serial_port.baudrate,
             ul_dt_us=10000,
@@ -60,13 +62,11 @@ class PortReader:
         )
 
         self.__serial_port.write(controller_setting_command)
-        time.sleep(0.2)
-        time.sleep(2)
 
+        # Команда применения настроек
         x_conf_pack = IBCMReconfigCMDt(
             is_need_reconfig=1
         )
-
         controller_set_command = x_conf_pack.generate_hex(
             sender_id=CAServicesIDE.CA_ID_iBCM,
             recipient_id=CAServicesIDE.CA_ID_iBCM,
@@ -74,29 +74,28 @@ class PortReader:
             crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
         )
         self.__serial_port.write(controller_set_command)
-        time.sleep(0.2)
-        time.sleep(2)
 
         this_byte = ""
         byte_line = ""
 
         amount_of_bytes = 0
-        time.sleep(0.1)
-        # print(self.__serial_port.in_waiting)
-        # print(self.__serial_port.read(size=1))
+
         while not self.__stop_thread:
             prev_byte = this_byte
-            if self.__serial_port.in_waiting <= 0:
-                break
+            print(self.__serial_port.in_waiting)
+            # if self.__serial_port.in_waiting <= 0:
+            #    break
             this_byte = self.__serial_port.read(size=1).hex()
+            print(this_byte)
             byte_line += this_byte
             amount_of_bytes += len(this_byte) // 2
 
             if prev_byte == "aa" and this_byte == "aa":
                 byte_line = prev_byte + this_byte
                 amount_of_bytes = 2
-
+            print(prev_byte)
             if amount_of_bytes == 76:
+                print(1)
                 data = bytes.fromhex(byte_line)
                 self.__payloads.append(IBCMAllMeasPayloads(data))
 
@@ -136,7 +135,6 @@ class PortReader:
 
     def connect(self):
         """
-
         :return: Открывает порт для чтения и возвращает True, если порт откртыт, иначе False
         """
         # print("try to connect")
@@ -185,7 +183,21 @@ class PortReader:
         except serial.serialutil.SerialException:
             return False
 
-    def start_read(self, read_type: SensorIndicatorType):
+    def read_sensor_calibration_data(self, read_type: SensorIndicatorType, delay=READ_TIMEOUT):
+        """
+
+        :param read_type:  Тип датчика, для которого считываются данные, должен иметь тип данных SensorIndicatorType
+        :param delay: Опциональный параметр по умолчанию равен DataTypes.READ_TIMEOUT
+        :return: Считанные данные, None в сулчае если ничего не удалось считать
+        """
+        is_reading = self.__start_read_calibration_data(read_type)
+        if not is_reading:
+            return None
+        time.sleep(delay)
+        result = self.__stop_read_calibration_data()
+        return result
+
+    def __start_read_calibration_data(self, read_type: SensorIndicatorType):
         """
         Пример вызова self.start_read(SensorIndicatorType.Mag) - считать показатели магнитометра
         Начинает чтение, если до этого порт был открыт
@@ -200,7 +212,7 @@ class PortReader:
         else:
             return False
 
-    def stop_read(self):
+    def __stop_read_calibration_data(self):
         """
         Заканчивает чтение
         :return: Возвращает все считанные данные, в зависимости от read_type, заданного в start_read.
@@ -209,9 +221,9 @@ class PortReader:
         self.__stop_thread = True
         self.__reading_thread.join()
 
-        print(f"Гироскоп {self.__gyroscope}")
-        print(f"Акселерометр {self.__accelerometer}")
-        print(f"Магнитометр {self.__magnetometer}")
+        # print(f"Гироскоп {self.__gyroscope}")
+        # print(f"Акселерометр {self.__accelerometer}")
+        # print(f"Магнитометр {self.__magnetometer}")
 
         if self.__indicator_type == SensorIndicatorType.Gyr:
             return self.__gyroscope if len(self.__gyroscope) else None

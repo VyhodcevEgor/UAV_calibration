@@ -82,26 +82,21 @@ class PortReader:
 
         while not self.__stop_thread:
             prev_byte = this_byte
-            print(self.__serial_port.in_waiting)
-            # if self.__serial_port.in_waiting <= 0:
-            #    break
             this_byte = self.__serial_port.read(size=1).hex()
-            print(this_byte)
             byte_line += this_byte
             amount_of_bytes += len(this_byte) // 2
 
             if prev_byte == "aa" and this_byte == "aa":
                 byte_line = prev_byte + this_byte
                 amount_of_bytes = 2
-            print(prev_byte)
             if amount_of_bytes == 76:
-                print(1)
                 data = bytes.fromhex(byte_line)
                 self.__payloads.append(IBCMAllMeasPayloads(data))
-
                 self.__gyroscope.append(self.__payloads[-1].aGyr)
                 self.__accelerometer.append(self.__payloads[-1].aAcc)
                 self.__magnetometer.append(self.__payloads[-1].aMag)
+                byte_line = ""
+                amount_of_bytes = 0
 
         else:
             x_conf_pack = IBCMbConfPayloadS(

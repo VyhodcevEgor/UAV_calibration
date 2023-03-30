@@ -70,6 +70,8 @@ with serial.Serial(port=COM_PORT, baudrate=BAUD_RATE, timeout=READ_TIMEOUT) as s
                     current_step += 1
                     if current_step == 6:
                         current_step = 0
+                if count_aa == 4:
+                    count_aa = 0
             last_byte = current_byte
 
 

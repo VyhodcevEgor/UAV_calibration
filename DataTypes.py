@@ -1,6 +1,6 @@
 import struct
 
-READ_TIMEOUT = 0.5
+READ_TIMEOUT = 2
 
 
 def crc_function(crc_type, buf):

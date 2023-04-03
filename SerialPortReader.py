@@ -70,7 +70,7 @@ class PortReader:
         controller_set_command = x_conf_pack.generate_hex(
             sender_id=CAServicesIDE.CA_ID_iBCM,
             recipient_id=CAServicesIDE.CA_ID_iBCM,
-            pack_id=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvReadConfPack,
+            pack_id=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvReadReconfigCmd,
             crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
         )
         self.__serial_port.write(controller_set_command)
@@ -95,10 +95,14 @@ class PortReader:
                 self.__gyroscope.append(self.__payloads[-1].aGyr)
                 self.__accelerometer.append(self.__payloads[-1].aAcc)
                 self.__magnetometer.append(self.__payloads[-1].aMag)
+
                 byte_line = ""
                 amount_of_bytes = 0
 
         else:
+            print(self.__gyroscope)
+            print(self.__accelerometer)
+            print(self.__magnetometer)
             x_conf_pack = IBCMbConfPayloadS(
                 baud_rate=self.__serial_port.baudrate,
                 ul_dt_us=0,
@@ -107,7 +111,7 @@ class PortReader:
             controller_setting_command = x_conf_pack.generate_hex(
                 sender_id=CAServicesIDE.CA_ID_iBCM,
                 recipient_id=CAServicesIDE.CA_ID_iBCM,
-                pack_id=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvReadConfPack,
+                pack_id=IBCMParseMessageAPIE.iBCM_PARSE_MESSAGE_API_prvReadReconfigCmd,
                 crc_type=CaCrcType.SFH_CRC_TYPE_SIZE_32BIT,
             )
 

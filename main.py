@@ -150,9 +150,9 @@ class MainWindow(QMainWindow):
         self.progressBar.setValue(self.progress_value)
         self.resultsWidjet.hide()
         self.calibrationWidjet.show()
-
+        self.current_step_num = 1
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
-        self.current_step_num += 1
+
 
     """Данный метод выполняется каждый раз когда пользователь продолжает колибровку данных"""
     def continue_calibration(self):
@@ -168,8 +168,10 @@ class MainWindow(QMainWindow):
 
         self.progress_value += self.progress_addition[self.eqvView.currentText()]
         self.progressBar.setValue(int(self.progress_value))
-        self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         self.current_step_num += 1
+        self.indicPosition.setPixmap(self.get_image(self.current_step_num))
+        print(self.current_step_num)
+
 
         if self.progress_value >= 100:
             self.consoleText.setText('Начался расчет матриц.')
@@ -330,6 +332,7 @@ class MainWindow(QMainWindow):
             self.progress_value -= self.progress_addition[self.eqvView.currentText()]
             self.progressBar.setValue(int(self.progress_value))
             self.current_step_num -= 1
+
             self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         except:
             message = 'Это первый шаг, повторите действия изображенные на рисунке и нажмите кнопку "Далее"'

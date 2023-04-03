@@ -32,7 +32,7 @@ COM_PORT = "COM2"
 
 BAUD_RATE = 115200
 
-TESTING_TYPE = 1
+TESTING_TYPE = 3
 
 MAGNETIC_DECLINATION = 58.0
 
@@ -408,7 +408,6 @@ with serial.Serial(
     while True:
         if serial_port.isOpen():
             current_byte = serial_port.read().hex().upper()
-            print(current_byte)
             if last_byte == "AA" and current_byte == "AA":
                 count_aa += 1
                 if count_aa == 2:
@@ -433,6 +432,8 @@ with serial.Serial(
                             )
                         serial_port.write(data.generate_hex())
                     current_step += 1
+                    print(f"номер измерения: {current_step}")
+                    print(data.aAcc)
                     if current_step == 6:
                         current_step = 0
                 if count_aa == 4:

@@ -157,25 +157,13 @@ class MainWindow(QMainWindow):
     """Данный метод выполняется каждый раз когда пользователь продолжает колибровку данных"""
     def continue_calibration(self):
         # Начало чтения порта
-        read_start = self.port_reader.start_read(self.eqvView.currentText())
-        if read_start:
-            time.sleep(self.sleeping_time)
-
-            # Сохранение позиционных данных
-            raw_dim = self.port_reader.stop_read()
-            if raw_dim is not None:
-                self.position_data.append(accel.form_row(raw_dim))
-                self.consoleText.setText(self.position_data)  # Вывод позиционных данных в консоль
-            else:
-                message = 'Данные не могут быть получены'
-                error.show_error(message)
-                self.consoleText.setText('Данные не могут быть получены.')
-                return
+        raw_dim = self.port_reader.read_sensor_calibration_data(self.eqvView.currentText())
+        if raw_dim is not None:
+            self.position_data.append(accel.form_row(raw_dim))
         else:
-            message = 'Не удалось начать чтение данных'
+            message = 'Данные не могут быть получены'
             error.show_error(message)
-            self.progress_value = 0
-            self.calibrationWidjet.hide()
+            self.consoleText.setText('Данные не могут быть получены.')
             return
 
         self.progress_value += self.progress_addition[self.eqvView.currentText()]

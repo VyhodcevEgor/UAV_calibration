@@ -12,6 +12,7 @@ import json
 import error
 import accelerometer as accel
 import magnetometer as magnet
+import gyroscope as gyro
 import SerialPortReader as ports
 import time
 
@@ -122,7 +123,7 @@ class MainWindow(QMainWindow):
             case indicT.Acc:
                 image = f'./assets/accAndGyr/{pos_num}.jpeg'
             case indicT.Mag:
-                print('Dumbass')
+                image = f'./assets/magnetometr/{pos_num}.jpeg'
             case indicT.Gyr:
                 image = f'./assets/accAndGyr/{pos_num}.jpeg'
         img = QPixmap(image)
@@ -138,6 +139,7 @@ class MainWindow(QMainWindow):
             self.consoleText.setText('Калибровка перезапущена.')
 
         self.progress_value = 0
+        self.position_data = []
 
         # Сохранение выбранных пользователем данных
         self.magnetic_declination = self.magneticDeclination.value()
@@ -192,7 +194,9 @@ class MainWindow(QMainWindow):
                                                                 self.magnetometer_allowance)
                 # Расчет для гироскопа
                 case indicT.Gyr:
-                    print('Dumbass')
+                    raw_data = gyro.form_raw_data(self.position_data)
+                    self.matrix = gyro.calibrate_gyroscope(raw_data, self.max_allowance,
+                                                                self.accelerometer_allowance)
 
             self.reload_calib = False
             self.calibrationWidjet.hide()

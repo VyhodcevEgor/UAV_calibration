@@ -168,6 +168,8 @@ class MainWindow(QMainWindow):
 
         self.progress_value += self.progress_addition[self.eqvView.currentText()]
         self.progressBar.setValue(int(self.progress_value))
+        self.indicPosition.setPixmap(self.get_image(self.current_step_num))
+        self.current_step_num += 1
 
         if self.progress_value >= 100:
             self.consoleText.setText('Начался расчет матриц.')
@@ -320,10 +322,15 @@ class MainWindow(QMainWindow):
                     error.show_error(message)
                     return
 
+    '''Функция возврата на предыдущий шаг калибровки'''
     def remove_last_step(self):
         try:
             last_mean = self.position_data.pop()
             self.consoleText.setText(f'Значение удалено: \n{last_mean}')
+            self.progress_value -= self.progress_addition[self.eqvView.currentText()]
+            self.progressBar.setValue(int(self.progress_value))
+            self.current_step_num -= 1
+            self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         except:
             message = 'Это первый шаг, повторите действия изображенные на рисунке и нажмите кнопку "Далее"'
             error.show_error(message)

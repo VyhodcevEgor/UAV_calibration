@@ -396,7 +396,7 @@ current_step = 0
 count_aa = 0
 last_byte = ""
 
-RAW_DATA = form_raw_data(3, MAGNETIC_DECLINATION, READING_TIMES)
+RAW_DATA = form_raw_data(TESTING_TYPE, MAGNETIC_DECLINATION, READING_TIMES)
 """for row in RAW_DATA:
     print(row)"""
 

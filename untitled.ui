@@ -422,9 +422,9 @@
    <widget class="QWidget" name="resultsWidjet" native="true">
     <property name="geometry">
      <rect>
-      <x>200</x>
+      <x>70</x>
       <y>220</y>
-      <width>601</width>
+      <width>751</width>
       <height>291</height>
      </rect>
     </property>
@@ -444,7 +444,7 @@
     <widget class="QLabel" name="label_7">
      <property name="geometry">
       <rect>
-       <x>320</x>
+       <x>430</x>
        <y>0</y>
        <width>251</width>
        <height>16</height>
@@ -457,7 +457,7 @@
     <widget class="QLabel" name="label_8">
      <property name="geometry">
       <rect>
-       <x>280</x>
+       <x>370</x>
        <y>90</y>
        <width>21</width>
        <height>16</height>
@@ -470,7 +470,7 @@
     <widget class="QPushButton" name="transferButton">
      <property name="geometry">
       <rect>
-       <x>270</x>
+       <x>360</x>
        <y>110</y>
        <width>41</width>
        <height>31</height>
@@ -483,7 +483,7 @@
     <widget class="QPushButton" name="transferPZUButton">
      <property name="geometry">
       <rect>
-       <x>210</x>
+       <x>300</x>
        <y>230</y>
        <width>161</width>
        <height>31</height>
@@ -498,7 +498,7 @@
       <rect>
        <x>0</x>
        <y>20</y>
-       <width>261</width>
+       <width>341</width>
        <height>191</height>
       </rect>
      </property>
@@ -506,9 +506,9 @@
     <widget class="QTextEdit" name="equipmentText">
      <property name="geometry">
       <rect>
-       <x>320</x>
+       <x>420</x>
        <y>20</y>
-       <width>261</width>
+       <width>331</width>
        <height>191</height>
       </rect>
      </property>

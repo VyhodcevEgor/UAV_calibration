@@ -177,3 +177,25 @@ def acc_input_validation(calibration_matrix, raw_dimensions, error_threshold):
         print('Измерения во входных данных не содержат аномальных выбросов!')
 
     return flag
+
+
+def create_acc_polynom(calibration_matrix):
+    """
+    Данная функция составляет калибровочный полином и полином смещения из
+    калибровочной матрицы акселерометра.
+    :param calibration_matrix: Калибровочная матрица <numpy.ndarray>
+        размерностью 4x3, полученная после математической обработки.
+    :return: Возвращает два <numpy.ndarray> - калибровочный полином
+        размерностью 1x9 и полином смещения размерностью 1x3 для дальнейшей
+        записи их в ПЗУ.
+    """
+    calibration_polynom = []
+    displacement_polynom = []
+    for idx in range(3):
+        column = calibration_matrix[:, idx]
+        calibration_polynom.append([column[0], 0, 0, 0, 0, 0])
+        calibration_polynom.append([column[1], 0, 0, 0, 0, 0])
+        calibration_polynom.append([column[2], 0, 0, 0, 0, 0])
+        displacement_polynom.append([-column[3], 0, 0, 0, 0, 0])
+
+    return calibration_polynom, displacement_polynom

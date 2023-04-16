@@ -31,6 +31,7 @@ class MainWindow(QMainWindow):
             indicT.Mag: 4.2
         }
         self.matrix = [[4, 1, 5, 6, 3, 6], [4, 1, 5, 6, 3, 6], [4, 1, 5, 6, 3, 6]]
+        self.polynom = []
         self.position_data = []
         self.magnetic_declination = 0 # магнетическое склонение
         self.accelerometer_allowance = 0 # допуск отклонений акселерометра
@@ -174,7 +175,6 @@ class MainWindow(QMainWindow):
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         print(self.current_step_num)
 
-
         if self.progress_value >= 100:
             self.consoleText.setText('Начался расчет матриц.')
             current_indic = self.eqvView.currentText()
@@ -186,17 +186,20 @@ class MainWindow(QMainWindow):
                     raw_data = accel.form_raw_data(self.position_data)
                     self.matrix = accel.calibrate_accelerometer(raw_data, self.max_allowance,
                                                                 self.accelerometer_allowance)
+                    self.polynom = accel.create_acc_polynom(self.matrix)
                 # Расчет для магнитометра
                 case indicT.Mag:
                     ideal_matrix = magnet.form_ideal_matrix(self.magnetometer_allowance)
                     raw_data = magnet.form_raw_data(self.position_data)
                     self.matrix = magnet.calibrate_magnetometer(raw_data, ideal_matrix, self.max_allowance,
                                                                 self.magnetometer_allowance)
+                    self.polynom = magnet.create_mag_polynom(self.matrix)
                 # Расчет для гироскопа
                 case indicT.Gyr:
                     raw_data = gyro.form_raw_data(self.position_data)
                     self.matrix = gyro.calibrate_gyroscope(raw_data, self.max_allowance,
-                                                                self.accelerometer_allowance)
+                                                           self.gyroscope_allowance)
+                    self.polynom = gyro.create_gyr_polynom(self.matrix)
 
             self.reload_calib = False
             self.calibrationWidjet.hide()
@@ -226,7 +229,7 @@ class MainWindow(QMainWindow):
     def transfer_data(self):
         self.consoleText.setText('Перенос данных в оперативную память устройства.')
         text = ''
-        for mat_str in self.matrix:
+        for mat_str in self.polynom:
             for elem in mat_str:
                 text += str(elem) + '  '
             text += '\n\n'
@@ -237,7 +240,7 @@ class MainWindow(QMainWindow):
     def save_in_equipment(self):
         self.consoleText.setText('Сохранение данных в ПЗУ датчика.')
         text = ''
-        for mat_str in self.matrix:
+        for mat_str in self.polynom:
             for elem in mat_str:
                 text += str(elem) + '  '
             text += '\n\n'

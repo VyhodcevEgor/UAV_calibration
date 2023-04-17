@@ -253,7 +253,8 @@ class PortReader:
 
     def send_gyr_calib_mat(self, poly_calib_matrix, poly_offset_matrix):
         """
-
+        Данная функция отправляет матрицу калибровочных полиномов и
+        полиномов смещений для гироскопа на контроллер
         :param poly_calib_matrix:  Матрица калибровочных полиномов гиросокпа
         :param poly_offset_matrix: Матрица полиномов смещений  гиросокпа
         :return: True - успешная запись
@@ -299,6 +300,8 @@ class PortReader:
 
     def send_acc_calib_mat(self, poly_calib_matrix, poly_offset_matrix):
         """
+        Данная функция отправляет матрицу калибровочных полиномов и
+        полиномов смещений для акселерометра на контроллер
         :param poly_calib_matrix:  Матрица калибровочных полиномов акселерометра
         :param poly_offset_matrix: Матрица полиномов смещений  акселерометра
         :return: True - успешная запись

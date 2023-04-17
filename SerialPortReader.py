@@ -252,6 +252,12 @@ class PortReader:
         return not self.__serial_port.is_open
 
     def send_gyr_calib_mat(self, poly_calib_matrix, poly_offset_matrix):
+        """
+
+        :param poly_calib_matrix:  Матрица калибровочных полиномов гиросокпа
+        :param poly_offset_matrix: Матрица полиномов смещений  гиросокпа
+        :return: True - успешная запись
+        """
         try:
             switch = ResetGyrPolyAll()
 
@@ -292,6 +298,11 @@ class PortReader:
             return False
 
     def send_acc_calib_mat(self, poly_calib_matrix, poly_offset_matrix):
+        """
+        :param poly_calib_matrix:  Матрица калибровочных полиномов акселерометра
+        :param poly_offset_matrix: Матрица полиномов смещений  акселерометра
+        :return: True - успешная запись
+        """
         try:
             switch = ResetAccPolyAll()
 

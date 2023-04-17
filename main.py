@@ -240,8 +240,8 @@ class MainWindow(QMainWindow):
     def save_in_equipment(self):
         self.consoleText.setText('Сохранение данных в ПЗУ датчика.')
         text = ''
-        for mat_str in self.polynom:
-            for elem in mat_str:
+        for pol_str in self.polynom:
+            for elem in pol_str:
                 text += str(elem) + '  '
             text += '\n\n'
         self.equipmentText.setText(text)

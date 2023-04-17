@@ -22,7 +22,6 @@ from DataTypes import ResetGyrPolyAll
 from DataTypes import ResetAccPolyAll
 
 
-
 class PortReader:
     def __init__(self):
         self.__serial_port = serial.Serial()
@@ -36,9 +35,10 @@ class PortReader:
 
     def set_port(self, port, baud_rate):
         """
+        Данная функция устанавливает настройки ком порта для общения с контроллером
         :param port: Номер ком порта
         :param baud_rate: Скорость общения с ком портом
-        :return: True если настрйока и подключение к порту были успешны, иначе False
+        :return: True если настройка и подключение к порту были успешны, иначе False
         """
         try:
             self.__serial_port = serial.Serial(port=port, baudrate=baud_rate, timeout=READ_TIMEOUT)
@@ -48,6 +48,10 @@ class PortReader:
             return False
 
     def __read(self):
+        """
+        Функция считывает данные с контроллера и считается 'приватной'
+        :return: данные считываются в глобальную переменную self.__payloads
+        """
 
         self.__stop_thread = False
         self.__payloads = []
@@ -142,6 +146,7 @@ class PortReader:
 
     def connect(self):
         """
+        Функция устанавливает соединение с настроенным ком портом
         :return: Открывает порт для чтения и возвращает True, если порт откртыт, иначе False
         """
         # print("try to connect")
@@ -153,8 +158,8 @@ class PortReader:
 
     def write_magnetometer_calibration_matrix(self, matrix):
         """
-
-        :param matrix: калибровочная матриа магнитометра, float [3][3]
+        Функция записывает калибровочную матрицу магнитометра в память контроллера через открытый ком порт
+        :param matrix: калибровочная матрица магнитометра, float [3][3]
         :return: Статус выполнения записи матрицы
         """
         try:
@@ -172,7 +177,7 @@ class PortReader:
 
     def write_magnetometer_offset_matrix(self, matrix):
         """
-
+        Функция записывает матрицу смещения магнитометра в память контроллера через открытый ком порт
         :param matrix: матриа смещения, float [3][1]
         :return: Статус выполнения записи матрицы
         """
@@ -192,7 +197,7 @@ class PortReader:
 
     def read_sensor_calibration_data(self, read_type: SensorIndicatorType, delay=READ_TIMEOUT):
         """
-
+        Функция считывает данные с датчика для их дальнейшей обработки через заранее открытый ком порт
         :param read_type:  Тип датчика, для которого считываются данные, должен иметь тип данных SensorIndicatorType
         :param delay: Опциональный параметр по умолчанию равен DataTypes.READ_TIMEOUT
         :return: Считанные данные, None в сулчае если ничего не удалось считать
@@ -221,7 +226,7 @@ class PortReader:
 
     def __stop_read_calibration_data(self):
         """
-        Заканчивает чтение
+        Заканчивает чтение информации из потока общения с контроллером
         :return: Возвращает все считанные данные, в зависимости от read_type, заданного в start_read.
         Если тип был не задан, то возвращает None
         """
@@ -243,7 +248,7 @@ class PortReader:
 
     def close_port(self):
         """
-        Функция закрывает откртый ранее порт
+        Функция закрывает открытый ранее ком порт
         :return: True - если порт был закрыт успешно, иначе False
         """
 
@@ -255,8 +260,8 @@ class PortReader:
         """
         Данная функция отправляет матрицу калибровочных полиномов и
         полиномов смещений для гироскопа на контроллер
-        :param poly_calib_matrix:  Матрица калибровочных полиномов гиросокпа
-        :param poly_offset_matrix: Матрица полиномов смещений  гиросокпа
+        :param poly_calib_matrix: Матрица калибровочных полиномов гиросокпа
+        :param poly_offset_matrix: Матрица полиномов смещений гиросокпа
         :return: True - успешная запись
         """
         try:
@@ -302,8 +307,8 @@ class PortReader:
         """
         Данная функция отправляет матрицу калибровочных полиномов и
         полиномов смещений для акселерометра на контроллер
-        :param poly_calib_matrix:  Матрица калибровочных полиномов акселерометра
-        :param poly_offset_matrix: Матрица полиномов смещений  акселерометра
+        :param poly_calib_matrix: Матрица калибровочных полиномов акселерометра
+        :param poly_offset_matrix: Матрица полиномов смещений акселерометра
         :return: True - успешная запись
         """
         try:

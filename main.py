@@ -3,10 +3,7 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtWidgets
 from DataTypes import SensorIndicatorType as indicT
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QGraphicsPixmapItem
-from PyQt5.QtWidgets import QGraphicsScene
 import serial
-import serial.tools.list_ports as list_ports
 import sys
 import json
 import error
@@ -14,7 +11,8 @@ import accelerometer as accel
 import magnetometer as magnet
 import gyroscope as gyro
 import SerialPortReader as ports
-import time
+import glob
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -24,6 +22,7 @@ class MainWindow(QMainWindow):
         # Здесь определяются свойства для хранения временных данных или констант
         self.open_com = True
         self.console_opened = True
+        self.calibration_is_start = False
         self.progress_value = 0
         self.progress_addition = {
             indicT.Acc: 16.7,
@@ -31,16 +30,19 @@ class MainWindow(QMainWindow):
             indicT.Mag: 4.2
         }
         self.matrix = [[4, 1, 5, 6, 3, 6], [4, 1, 5, 6, 3, 6], [4, 1, 5, 6, 3, 6]]
+        self.calibration_polynom = []
+        self.displacement_polynom = []
         self.position_data = []
-        self.magnetic_declination = 0 # магнетическое склонение
-        self.accelerometer_allowance = 0 # допуск отклонений акселерометра
-        self.gyroscope_allowance = 0 # допуск отклонений гироскопа
-        self.magnetometer_allowance = 0 # допуск отклонений магнитометра
-        self.max_allowance = 0 # допустимая погрешность калибровки
+        self.magnetic_declination = 0  # магнетическое склонение
+        self.accelerometer_allowance = 0  # допуск отклонений акселерометра
+        self.gyroscope_allowance = 0  # допуск отклонений гироскопа
+        self.magnetometer_allowance = 0  # допуск отклонений магнитометра
+        self.max_allowance = 0  # допустимая погрешность калибровки
         self.port_reader = ports.PortReader()
         self.sleeping_time = 0.5
         self.current_step_num = 1
         self.reload_calib = False
+        self.current_sensor = ''
 
         # Скрытие и отображение виджитов при инициализации
         if not self.console_opened:
@@ -60,13 +62,14 @@ class MainWindow(QMainWindow):
         self.actionLoad.triggered.connect(self.load_matrix_from_file)
         self.reloadButton.clicked.connect(self.serial_ports)
         self.backButton.clicked.connect(self.remove_last_step)
+        self.eqvView.currentTextChanged.connect(self.sensor_type_change)
 
-        views = [indicT.Acc, indicT.Gyr, indicT.Mag]
+        self.views = [indicT.Acc, indicT.Gyr, indicT.Mag]
         self.serial_ports()
         speeds = ['115200']
 
         # Заполнение необходимых полей при инициализации
-        self.eqvView.addItems(views)
+        self.eqvView.addItems(self.views)
         self.speedMean.addItems(speeds)
         self.comName.setText('')
         self.accelerometerAllowance.setValue(0.3)
@@ -81,17 +84,17 @@ class MainWindow(QMainWindow):
     def serial_ports(self):
         self.consoleText.setText('Список COM портов обновляется.')
         if sys.platform.startswith('win'):
-            ports = ['COM%s' % (i + 1) for i in range(256)]
+            ports_list = ['COM%s' % (i + 1) for i in range(256)]
         elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
             # this excludes your current terminal "/dev/tty"
-            ports = glob.glob('/dev/tty[A-Za-z]*')
+            ports_list = glob.glob('/dev/tty[A-Za-z]*')
         elif sys.platform.startswith('darwin'):
-            ports = glob.glob('/dev/tty.*')
+            ports_list = glob.glob('/dev/tty.*')
         else:
             raise EnvironmentError('Unsupported platform')
 
         result = []
-        for port in ports:
+        for port in ports_list:
             try:
                 s = serial.Serial(port)
                 s.close()
@@ -119,6 +122,8 @@ class MainWindow(QMainWindow):
     def get_image(self, pos_num):
         current_indic = self.eqvView.currentText()
 
+        image = ''
+
         match current_indic:
             case indicT.Acc:
                 image = f'./assets/accAndGyr/{pos_num}.jpeg'
@@ -130,8 +135,22 @@ class MainWindow(QMainWindow):
 
         return img
 
+    """Данный метод проверяет, происходит ли изменение типа датчика во время калибровки или нет"""
+    def sensor_type_change(self):
+        if self.calibration_is_start:
+            message = 'Нельзя изменять тип датчика во время калибровки'
+            error.show_error(message)
+            self.consoleText.setText(message)
+            self.eqvView.setCurrentText(self.current_sensor)
+
+        self.current_sensor = self.eqvView.currentText()
+
     """Данный метод начинает выполнение калибровки при нажатии на соответствующую кнопку"""
     def start_calibration(self):
+        if self.open_com is True:
+            message = 'Невозможно начать калибровку, COM порт не открыт'
+            error.show_error(message)
+            return
         if not self.reload_calib:
             self.consoleText.setText('Калибровка началась.')
             self.reload_calib = True
@@ -140,6 +159,7 @@ class MainWindow(QMainWindow):
 
         self.progress_value = 0
         self.position_data = []
+        self.calibration_is_start = True
 
         # Сохранение выбранных пользователем данных
         self.magnetic_declination = self.magneticDeclination.value()
@@ -154,7 +174,6 @@ class MainWindow(QMainWindow):
         self.calibrationWidjet.show()
         self.current_step_num = 1
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
-
 
     """Данный метод выполняется каждый раз когда пользователь продолжает колибровку данных"""
     def continue_calibration(self):
@@ -174,8 +193,8 @@ class MainWindow(QMainWindow):
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         print(self.current_step_num)
 
-
         if self.progress_value >= 100:
+            self.calibration_is_start = False
             self.consoleText.setText('Начался расчет матриц.')
             current_indic = self.eqvView.currentText()
 
@@ -186,17 +205,23 @@ class MainWindow(QMainWindow):
                     raw_data = accel.form_raw_data(self.position_data)
                     self.matrix = accel.calibrate_accelerometer(raw_data, self.max_allowance,
                                                                 self.accelerometer_allowance)
+                    if self.matrix is not None:
+                        self.calibration_polynom, self.displacement_polynom = accel.create_acc_polynom(self.matrix)
                 # Расчет для магнитометра
                 case indicT.Mag:
                     ideal_matrix = magnet.form_ideal_matrix(self.magnetometer_allowance)
                     raw_data = magnet.form_raw_data(self.position_data)
                     self.matrix = magnet.calibrate_magnetometer(raw_data, ideal_matrix, self.max_allowance,
                                                                 self.magnetometer_allowance)
+                    if self.matrix is not None:
+                        self.calibration_polynom, self.displacement_polynom = magnet.create_mag_polynom(self.matrix)
                 # Расчет для гироскопа
                 case indicT.Gyr:
                     raw_data = gyro.form_raw_data(self.position_data)
                     self.matrix = gyro.calibrate_gyroscope(raw_data, self.max_allowance,
-                                                                self.accelerometer_allowance)
+                                                           self.gyroscope_allowance)
+                    if self.matrix is not None:
+                        self.calibration_polynom, self.displacement_polynom = gyro.create_gyr_polynom(self.matrix)
 
             self.reload_calib = False
             self.calibrationWidjet.hide()
@@ -209,7 +234,6 @@ class MainWindow(QMainWindow):
                 message = 'Расчет матриц не может быть произведен'
                 error.show_error(message)
                 self.consoleText.setText(message)
-
 
     """Этот метод отвечает за вывод готовой вычисленной матрицы для устройства, которую
     возможно перенести в оперативную или в постоянную память устройства"""
@@ -226,8 +250,8 @@ class MainWindow(QMainWindow):
     def transfer_data(self):
         self.consoleText.setText('Перенос данных в оперативную память устройства.')
         text = ''
-        for mat_str in self.matrix:
-            for elem in mat_str:
+        for pol_str in self.calibration_polynom:
+            for elem in pol_str:
                 text += str(elem) + '  '
             text += '\n\n'
         self.equipmentText.setText(text)
@@ -237,10 +261,36 @@ class MainWindow(QMainWindow):
     def save_in_equipment(self):
         self.consoleText.setText('Сохранение данных в ПЗУ датчика.')
         text = ''
-        for mat_str in self.matrix:
-            for elem in mat_str:
+        for pol_str in self.calibration_polynom:
+            for elem in pol_str:
                 text += str(elem) + '  '
             text += '\n\n'
+
+        current_indic = self.eqvView.currentText()
+
+        match current_indic:
+            # Запись данных для акселерометра
+            case indicT.Acc:
+                transfer_result = self.port_reader.send_acc_calib_mat(self.calibration_polynom, self.displacement_polynom)
+
+                if not transfer_result:
+                    self.consoleText.setText('Данные не могут быть перенесены в датчик.')
+                    message = 'Данные не могут быть перенесены в датчик из-за внутренней ошибки'
+                    error.show_error(message)
+                    return
+            # Запись данных для магнитометра
+            case indicT.Mag:
+                print('Затычка отработала, на момент внедрения функция ещё не готова')
+            # Запись данных для гироскопа
+            case indicT.Gyr:
+                transfer_result = self.port_reader.send_gyr_calib_mat(self.calibration_polynom, self.displacement_polynom)
+
+                if not transfer_result:
+                    self.consoleText.setText('Данные не могут быть перенесены в датчик.')
+                    message = 'Данные не могут быть перенесены в датчик из-за внутренней ошибки'
+                    error.show_error(message)
+                    return
+
         self.equipmentText.setText(text)
         self.consoleText.setText('Данные сохранены в ПЗУ датчика')
 
@@ -258,7 +308,7 @@ class MainWindow(QMainWindow):
                 self.consoleText.setText('Настройки порта не могут быть совершены')
                 return
 
-            #Открытие порта для работы с ним
+            # Открытие порта для работы с ним
             port_opened = self.port_reader.connect()
             if not port_opened:
                 message = 'Открыть порт для работы не возможно, проверьте его доступность'
@@ -314,18 +364,20 @@ class MainWindow(QMainWindow):
             with open(url) as json_file:
                 try:
                     data = json.load(json_file)
-                except:
+                except Exception as e:
                     message = 'Структура файла не соответствует стандарту json'
                     error.show_error(message)
+                    print(e)
                     return
 
                 try:
                     self.matrix = data['matrix']
                     self.consoleText.setText('Матрица успешно прочитана из файла.')
-                except:
+                except Exception as e:
                     message = 'Файл не содержит подходящего поля. Убедитесь' \
                               ' что матрица присвоена свойству matrix'
                     error.show_error(message)
+                    print(e)
                     return
 
     '''Функция возврата на предыдущий шаг калибровки'''
@@ -338,9 +390,10 @@ class MainWindow(QMainWindow):
             self.current_step_num -= 1
 
             self.indicPosition.setPixmap(self.get_image(self.current_step_num))
-        except:
+        except Exception as e:
             message = 'Это первый шаг, повторите действия изображенные на рисунке и нажмите кнопку "Далее"'
             error.show_error(message)
+            print(e)
 
 
 if __name__ == "__main__":

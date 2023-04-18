@@ -4,6 +4,11 @@ READ_TIMEOUT = 2
 
 
 def crc_function(crc_type, buf):
+    """
+    Данная функция нужна для расчета контрольной суммы в зависимости от типа указанной контрольной суммы.
+    :param crc_type: Тип контрольной суммы, с.м. Class CaCrcType
+    :param buf: Строка (str) для которой мы рассчитываем контрольную сумму
+    """
     if crc_type == 0:
         return 0
     elif crc_type == 1:
@@ -28,6 +33,9 @@ def crc_function(crc_type, buf):
 
 
 class CaCrcType:
+    """
+    Класс описывает возможные типы контрольной суммы
+    """
     SFH_CRC_TYPE_NO_CRC = 0
     SFH_CRC_TYPE_SIZE_8BIT = 1
     SFH_CRC_TYPE_SIZE_16BIT = 2
@@ -36,6 +44,10 @@ class CaCrcType:
 
 
 class IBCMParseMessageAPIE:
+    """
+    Класс описывает параметры IBCMParseMessageAPIE
+    я сам не знаю для чего нужны некоторые из них
+    """
     iBCM_PARSE_MESSAGE_API_prvSendConfPack = 0
     iBCM_PARSE_MESSAGE_API_prvReadConfPack = 1
     iBCM_PARSE_MESSAGE_API_prvSendReconfigCmd = 2
@@ -54,6 +66,10 @@ class IBCMParseMessageAPIE:
 
 
 class CAServicesIDE:
+    """
+    Класс описывает параметры CAServicesIDE
+    я сам не знаю для чего нужны некоторые из них
+    """
     CA_ID_BROADCAST = 0
     CA_ID_iMAG_SERVICE_MAIN = 1
     CA_ID_IMAG_COMMUNICATION_SERVICE_MAIN = 2
@@ -75,12 +91,19 @@ class CAServicesIDE:
 
 
 class SensorIndicatorType:
+    """
+    Класс описывает параметры типы калибруемых сенсоров
+    """
     Gyr = "Гироскоп"
     Acc = "Акселерометр"
     Mag = "Магнитометр"
 
 
 class MagCalibParseMessageAPI:
+    """
+    Класс описывает параметры MagCalibParseMessageAPI
+    я сам не знаю для чего нужны некоторые из них
+    """
     MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB = 0
     MAGCALIB_PARSE_MESSAGE_SEND_MATRIX_CALIB = 1
     MAGCALIB_PARSE_MESSAGE_READ_MATRIX_OFFSET = 2
@@ -103,6 +126,15 @@ float a2MemAlloc[3][1];
 
 
 def generate_header(sender_id, recipient_id, pack_id, crc_type, payload_size):
+    """
+    Данная функция генерирует header для сообщения, которое будет отправлено на контроллер
+    :param sender_id: id Отправителя, как правило совпадает с recipient_id
+    :param recipient_id - совпадает с sender_id
+    :param pack_id: Тип команды, которую необходимо выполнить контроллеру
+    :param crc_type: тип контрольной суммы
+    :param payload_size: размер полезной нагрузки
+    :return: сгенерированный заголовок для сообщения
+    """
     start_frame = (43690).to_bytes(2, byteorder='little')
     sender_id_hex = struct.pack("B", sender_id)
     recipient_id_hex = struct.pack("B", recipient_id)
@@ -118,21 +150,41 @@ def generate_header(sender_id, recipient_id, pack_id, crc_type, payload_size):
 
 
 class MagnetometerOffsetMatrix:
-
+    """
+    Класс для описания матрицы смещений магнитометра
+    """
     def __init__(self, matrix):
+        """
+        :param matrix: матрица смещений магнитометра
+        """
         self.__payload_size = 12
         self.__matrix = matrix
 
     def rewrite_matrix(self, matrix):
+        """
+        Данная функция меняет значение внутри класса
+        :param matrix: матрица смещений магнитометра
+        """
         self.__matrix = matrix
 
     def __matrix_to_list(self):
+        """
+        Данная функция преобразует матрицу в список, для дальнейшего преобразования в bytes
+        """
         temp = []
         for elem in self.__matrix:
             temp.extend(elem)
         return temp
 
     def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
+        """
+        Данная функция генерирует сообщение для отправки на контроллер
+        :param sender_id: отправитель
+        :param recipient_id: получатель
+        :param pack_id: тип нагрузки для компьютера
+        :param crc_type: тип контрольной суммы
+        :return: возвращает сообщения для отправки на контроллер
+        """
 
         header = generate_header(sender_id, recipient_id, pack_id, crc_type, self.__payload_size)
 
@@ -154,14 +206,30 @@ class MagnetometerOffsetMatrix:
 class ResetGyrPolyAll:
     @staticmethod
     def generate_hex(sender_id, recipient_id, pack_id, crc_type):
-        header = generate_header(sender_id, recipient_id, pack_id, crc_type)
+        """
+        Функция и класс нужны для очистки значений гироскопа, находящихся на контроллере
+        :param sender_id: отправитель
+        :param recipient_id: получатель
+        :param pack_id: тип нагрузки для компьютера
+        :param crc_type: тип контрольной суммы
+        :return: возвращает сообщения для отправки на контроллер
+        """
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
         return header + struct.pack("i", 21845)
 
 
 class ResetAccPolyAll:
     @staticmethod
     def generate_hex(sender_id, recipient_id, pack_id, crc_type):
-        header = generate_header(sender_id, recipient_id, pack_id, crc_type)
+        """
+           Функция и класс нужны для очистки значений акселерометра, находящихся на контроллере
+           :param sender_id: отправитель
+           :param recipient_id: получатель
+           :param pack_id: тип нагрузки для компьютера
+           :param crc_type: тип контрольной суммы
+           :return: возвращает сообщения для отправки на контроллер
+           """
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
         return header + struct.pack("i", 21845)
 
 
@@ -423,19 +491,19 @@ class IBCMAllMeasPayloads:
 
         self.control_sum = bytes_data[72::]
 
-    def reset_values(self, aGyr, aAcc, aMag):
-        self.aGyr = aGyr
-        self.aAcc = aAcc
-        self.aMag = aMag
+    def reset_values(self, a_gyr, a_acc, a_mag):
+        self.aGyr = a_gyr
+        self.aAcc = a_acc
+        self.aMag = a_mag
 
     def generate_hex(self):
         result = self.__bytes_data[0:28]
 
-        aGyr = struct.pack("fff", self.aGyr[0], self.aGyr[1], self.aGyr[2])
-        aAcc = struct.pack("fff", self.aAcc[0], self.aAcc[1], self.aAcc[2])
-        aMag = struct.pack("fff", self.aMag[0], self.aMag[1], self.aMag[2])
-        result += aGyr + aAcc
+        a_gyr = struct.pack("fff", self.aGyr[0], self.aGyr[1], self.aGyr[2])
+        a_acc = struct.pack("fff", self.aAcc[0], self.aAcc[1], self.aAcc[2])
+        a_mag = struct.pack("fff", self.aMag[0], self.aMag[1], self.aMag[2])
+        result += a_gyr + a_acc
         result += self.__bytes_data[52:56]
-        result += aMag
+        result += a_mag
         result += self.__bytes_data[68::]
         return result

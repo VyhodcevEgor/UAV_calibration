@@ -215,7 +215,7 @@ class ResetGyrPolyAll:
         :return: возвращает сообщения для отправки на контроллер
         """
         header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
-        return header + struct.pack("i", 21845)
+        return header + struct.pack("h", 21845)
 
 
 class ResetAccPolyAll:
@@ -230,7 +230,8 @@ class ResetAccPolyAll:
            :return: возвращает сообщения для отправки на контроллер
            """
         header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
-        return header + struct.pack("i", 21845)
+        print(struct.pack("h", 21845).hex())
+        return header + struct.pack("h", 21845)
 
 
 class GyroscopeCalibrationPolynomial:
@@ -246,13 +247,15 @@ class GyroscopeCalibrationPolynomial:
 
         pay_load = ""
         for element in self.__gyr_poly_calib_mat:
-            pay_load += struct.pack('%f' % len(element), *element).hex()
+            for pol in element:
+                pay_load += struct.pack('f', pol).hex()
 
         crc = crc_function(crc_type, bytes.fromhex(pay_load))
 
         pay_load = b""
         for element in self.__gyr_poly_calib_mat:
-            pay_load += struct.pack('%f' % len(element), *element)
+            for pol in element:
+                pay_load += struct.pack('f', pol)
 
         crc = struct.pack("I", crc)
         return header + pay_load + crc
@@ -271,13 +274,15 @@ class GyroscopeOffsetPolynomial:
 
         pay_load = ""
         for element in self.__gyr_poly_off_mat:
-            pay_load += struct.pack('%f' % len(element), *element).hex()
+            for pol in element:
+                pay_load += struct.pack('f', pol).hex()
 
         crc = crc_function(crc_type, bytes.fromhex(pay_load))
 
         pay_load = b""
         for element in self.__gyr_poly_off_mat:
-            pay_load += struct.pack('%f' % len(element), *element)
+            for pol in element:
+                pay_load += struct.pack('f', pol)
 
         crc = struct.pack("I", crc)
         return header + pay_load + crc
@@ -296,13 +301,15 @@ class AccelerometerCalibrationPolynomial:
 
         pay_load = ""
         for element in self.__acc_poly_calib_mat:
-            pay_load += struct.pack('%f' % len(element), *element).hex()
+            for pol in element:
+                pay_load += struct.pack('f', pol).hex()
 
         crc = crc_function(crc_type, bytes.fromhex(pay_load))
 
         pay_load = b""
         for element in self.__acc_poly_calib_mat:
-            pay_load += struct.pack('%f' % len(element), *element)
+            for pol in element:
+                pay_load += struct.pack('f', pol)
 
         crc = struct.pack("I", crc)
         return header + pay_load + crc
@@ -321,13 +328,15 @@ class AccelerometerOffsetPolynomial:
 
         pay_load = ""
         for element in self.__acc_poly_off_mat:
-            pay_load += struct.pack('%f' % len(element), *element).hex()
+            for pol in element:
+                pay_load += struct.pack('f', pol).hex()
 
         crc = crc_function(crc_type, bytes.fromhex(pay_load))
 
         pay_load = b""
         for element in self.__acc_poly_off_mat:
-            pay_load += struct.pack('%f' % len(element), *element)
+            for pol in element:
+                pay_load += struct.pack('f', pol)
 
         crc = struct.pack("I", crc)
         return header + pay_load + crc

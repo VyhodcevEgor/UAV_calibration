@@ -320,6 +320,7 @@ class PortReader:
                 ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_ResetPolyAll,
                 CaCrcType.SFH_CRC_TYPE_FIX_16BIT
             )
+            print(message.hex())
             self.__serial_port.write(message)
 
             time.sleep(0.1)
@@ -332,6 +333,7 @@ class PortReader:
                 ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_ReadPolyCalibMat,
                 CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
             )
+            print(message.hex())
             self.__serial_port.write(message)
 
             time.sleep(0.1)
@@ -344,6 +346,7 @@ class PortReader:
                 ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_ReadPolyOffsetMat,
                 CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
             )
+            print(message.hex())
             self.__serial_port.write(message)
 
             return True

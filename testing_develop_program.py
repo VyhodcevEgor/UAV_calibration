@@ -400,6 +400,8 @@ RAW_DATA = form_raw_data(TESTING_TYPE, MAGNETIC_DECLINATION, READING_TIMES)
 """for row in RAW_DATA:
     print(row)"""
 
+rec_data = ""
+
 with serial.Serial(
         port=COM_PORT,
         baudrate=BAUD_RATE,
@@ -408,7 +410,10 @@ with serial.Serial(
     while True:
         if serial_port.isOpen():
             current_byte = serial_port.read().hex().upper()
+            rec_data += current_byte
             if last_byte == "AA" and current_byte == "AA":
+                print(rec_data)
+                rec_data = ""
                 count_aa += 1
                 if count_aa == 2:
                     for i in range(len(RAW_DATA[current_step])):

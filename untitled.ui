@@ -108,7 +108,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Начать колибровку</string>
+     <string>Начать калибровку</string>
     </property>
    </widget>
    <widget class="QPushButton" name="consoleButton">

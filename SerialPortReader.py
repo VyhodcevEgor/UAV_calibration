@@ -59,6 +59,19 @@ class PortReader:
         self.__gyroscope = []
         self.__accelerometer = []
         self.__magnetometer = []
+        # Обнуления значений датчика
+        switch = ResetAccPolyAll()
+
+        message = switch.generate_hex(
+            CAServicesIDE.CA_ID_iBCM,
+            CAServicesIDE.CA_ID_iBCM,
+            ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_ResetPolyAll,
+            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+        )
+        print(message.hex())
+        self.__serial_port.write(message)
+
+        time.sleep(0.1)
 
         # Команда приминения конфигураций
         x_conf_pack = IBCMbConfPayloadS(
@@ -312,19 +325,6 @@ class PortReader:
         :return: True - успешная запись
         """
         try:
-            switch = ResetAccPolyAll()
-
-            message = switch.generate_hex(
-                CAServicesIDE.CA_ID_iBCM,
-                CAServicesIDE.CA_ID_iBCM,
-                ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_ResetPolyAll,
-                CaCrcType.SFH_CRC_TYPE_FIX_16BIT
-            )
-            print(message.hex())
-            self.__serial_port.write(message)
-
-            time.sleep(0.1)
-
             acc_poly_calib_mat = AccelerometerCalibrationPolynomial(poly_calib_matrix)
 
             message = acc_poly_calib_mat.generate_hex(

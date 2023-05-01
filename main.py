@@ -12,6 +12,7 @@ import magnetometer as magnet
 import gyroscope as gyro
 import SerialPortReader as ports
 import glob
+import numpy as np
 
 
 class MainWindow(QMainWindow):
@@ -19,7 +20,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         uic.loadUi('untitled.ui', self)
 
-        # Здесь определяются свойства для хранения временных данных или констант
+        # Здесь определяются свойства для хранения временных данных или const
         self.open_com = True
         self.console_opened = True
         self.calibration_is_start = False
@@ -29,7 +30,7 @@ class MainWindow(QMainWindow):
             indicT.Gyr: 16.7,
             indicT.Mag: 4.2
         }
-        self.matrix = [[4, 1, 5, 6, 3, 6], [4, 1, 5, 6, 3, 6], [4, 1, 5, 6, 3, 6]]
+        self.matrix = []
         self.calibration_polynom = []
         self.displacement_polynom = []
         self.position_data = []
@@ -44,7 +45,7 @@ class MainWindow(QMainWindow):
         self.reload_calib = False
         self.current_sensor = ''
 
-        # Скрытие и отображение виджитов при инициализации
+        # Скрытие и отображение виджетов при инициализации
         if not self.console_opened:
             self.consoleButton.setText('Закрыть консоль')
             self.consoleText.hide()
@@ -81,11 +82,13 @@ class MainWindow(QMainWindow):
         self.consoleText.setText('Программа запущена и готова к работе.')
 
     """Получение списка доступных портов"""
+
     def serial_ports(self):
         self.consoleText.setText('Список COM портов обновляется.')
         if sys.platform.startswith('win'):
             ports_list = ['COM%s' % (i + 1) for i in range(256)]
-        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+        elif sys.platform.startswith('linux') or sys.platform.startswith(
+                'cygwin'):
             # this excludes your current terminal "/dev/tty"
             ports_list = glob.glob('/dev/tty[A-Za-z]*')
         elif sys.platform.startswith('darwin'):
@@ -107,6 +110,7 @@ class MainWindow(QMainWindow):
         self.consoleText.setText('Список COM портов обновлен.')
 
     """Данный метод используется для открытия и закрытия консоли"""
+
     def open_close_console(self):
         self.console_opened = not self.console_opened
 
@@ -135,7 +139,11 @@ class MainWindow(QMainWindow):
 
         return img
 
-    """Данный метод проверяет, происходит ли изменение типа датчика во время калибровки или нет"""
+    """
+    Данный метод проверяет, происходит ли изменение типа датчика во время 
+    калибровки или нет
+    """
+
     def sensor_type_change(self):
         if self.calibration_is_start:
             message = 'Нельзя изменять тип датчика во время калибровки'
@@ -145,7 +153,11 @@ class MainWindow(QMainWindow):
 
         self.current_sensor = self.eqvView.currentText()
 
-    """Данный метод начинает выполнение калибровки при нажатии на соответствующую кнопку"""
+    """
+    Данный метод начинает выполнение калибровки при нажатии на 
+    соответствующую кнопку
+    """
+
     def start_calibration(self):
         if self.open_com is True:
             message = 'Невозможно начать калибровку, COM порт не открыт'
@@ -175,10 +187,15 @@ class MainWindow(QMainWindow):
         self.current_step_num = 1
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
 
-    """Данный метод выполняется каждый раз когда пользователь продолжает колибровку данных"""
+    """
+    Данный метод выполняется каждый раз когда пользователь продолжает 
+    калибровку данных
+    """
+
     def continue_calibration(self):
         # Начало чтения порта
-        raw_dim = self.port_reader.read_sensor_calibration_data(self.eqvView.currentText())
+        raw_dim = self.port_reader.read_sensor_calibration_data(
+            self.eqvView.currentText())
         if raw_dim is not None:
             self.position_data.append(accel.form_row(raw_dim))
         else:
@@ -187,7 +204,8 @@ class MainWindow(QMainWindow):
             self.consoleText.setText('Данные не могут быть получены.')
             return
 
-        self.progress_value += self.progress_addition[self.eqvView.currentText()]
+        self.progress_value += self.progress_addition[
+            self.eqvView.currentText()]
         self.progressBar.setValue(int(self.progress_value))
         self.current_step_num += 1
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
@@ -203,25 +221,43 @@ class MainWindow(QMainWindow):
                 # Расчет для акселерометра
                 case indicT.Acc:
                     raw_data = accel.form_raw_data(self.position_data)
-                    self.matrix = accel.calibrate_accelerometer(raw_data, self.max_allowance,
-                                                                self.accelerometer_allowance)
+                    self.matrix = accel.calibrate_accelerometer(
+                        raw_data,
+                        self.max_allowance,
+                        self.accelerometer_allowance
+                    )
                     if self.matrix is not None:
-                        self.calibration_polynom, self.displacement_polynom = accel.create_acc_polynom(self.matrix)
+                        self.calibration_polynom, self.displacement_polynom = accel.create_acc_polynom(
+                            self.matrix)
                 # Расчет для магнитометра
                 case indicT.Mag:
-                    ideal_matrix = magnet.form_ideal_matrix(self.magnetometer_allowance)
+                    ideal_matrix = magnet.form_ideal_matrix(
+                        self.magnetometer_allowance
+                    )
                     raw_data = magnet.form_raw_data(self.position_data)
-                    self.matrix = magnet.calibrate_magnetometer(raw_data, ideal_matrix, self.max_allowance,
-                                                                self.magnetometer_allowance)
+                    self.matrix = magnet.calibrate_magnetometer(
+                        raw_data,
+                        ideal_matrix,
+                        self.max_allowance,
+                        self.magnetometer_allowance
+                    )
                     if self.matrix is not None:
-                        self.calibration_polynom, self.displacement_polynom = magnet.create_mag_polynom(self.matrix)
+                        self.calibration_polynom, \
+                            self.displacement_polynom = magnet.create_mag_polynom(
+                            self.matrix)
                 # Расчет для гироскопа
                 case indicT.Gyr:
                     raw_data = gyro.form_raw_data(self.position_data)
-                    self.matrix = gyro.calibrate_gyroscope(raw_data, self.max_allowance,
-                                                           self.gyroscope_allowance)
+                    self.matrix = gyro.calibrate_gyroscope(
+                        raw_data,
+                        self.max_allowance,
+                        self.gyroscope_allowance
+                    )
                     if self.matrix is not None:
-                        self.calibration_polynom, self.displacement_polynom = gyro.create_gyr_polynom(self.matrix)
+                        self.calibration_polynom, \
+                            self.displacement_polynom = gyro.create_gyr_polynom(
+                            self.matrix
+                        )
 
             self.reload_calib = False
             self.calibrationWidjet.hide()
@@ -235,8 +271,12 @@ class MainWindow(QMainWindow):
                 error.show_error(message)
                 self.consoleText.setText(message)
 
-    """Этот метод отвечает за вывод готовой вычисленной матрицы для устройства, которую
-    возможно перенести в оперативную или в постоянную память устройства"""
+    """
+    Этот метод отвечает за вывод готовой вычисленной матрицы для
+    устройства, которую возможно перенести в оперативную или в постоянную 
+    память устройства
+    """
+
     def show_calculated_matrix(self):
         text = ''
         for mat_str in self.matrix:
@@ -245,19 +285,30 @@ class MainWindow(QMainWindow):
             text += '\n\n'
         self.calculatedText.setText(text)
 
-    """Этот метод отвечает за перенос вычисленных данных в оперативную память устройства
-    для которого производилась калибровка"""
+    """
+    Этот метод отвечает за перенос вычисленных данных в оперативную 
+    память устройства для которого производилась калибровка
+    """
+
     def transfer_data(self):
-        self.consoleText.setText('Перенос данных в оперативную память устройства.')
+        self.consoleText.setText(
+            'Перенос данных в оперативную память устройства.'
+        )
         text = ''
         for pol_str in self.calibration_polynom:
             for elem in pol_str:
                 text += str(elem) + '  '
             text += '\n\n'
         self.equipmentText.setText(text)
-        self.consoleText.setText('Данные перенесены в оперативную память устройства.')
+        self.consoleText.setText(
+            'Данные перенесены в оперативную память устройства.'
+        )
 
-    """Этот метод используется для записи вычесленых данный в постоянную память устройства"""
+    """
+    Этот метод используется для записи вычисленных данных в постоянную 
+    память устройства
+    """
+
     def save_in_equipment(self):
         self.consoleText.setText('Сохранение данных в ПЗУ датчика.')
         text = ''
@@ -271,30 +322,46 @@ class MainWindow(QMainWindow):
         match current_indic:
             # Запись данных для акселерометра
             case indicT.Acc:
-                transfer_result = self.port_reader.send_acc_calib_mat(self.calibration_polynom, self.displacement_polynom)
+                transfer_result = self.port_reader.send_acc_calib_mat(
+                    self.calibration_polynom,
+                    self.displacement_polynom
+                )
 
                 if not transfer_result:
-                    self.consoleText.setText('Данные не могут быть перенесены в датчик.')
-                    message = 'Данные не могут быть перенесены в датчик из-за внутренней ошибки'
+                    self.consoleText.setText(
+                        'Данные не могут быть перенесены в датчик.'
+                    )
+                    message = 'Данные не могут быть перенесены в датчик ' \
+                              'из-за внутренней ошибки'
                     error.show_error(message)
                     return
             # Запись данных для магнитометра
             case indicT.Mag:
-                print('Затычка отработала, на момент внедрения функция ещё не готова')
+                print(
+                    'Затычка отработала, на момент внедрения функция ещё не готова')
             # Запись данных для гироскопа
             case indicT.Gyr:
-                transfer_result = self.port_reader.send_gyr_calib_mat(self.calibration_polynom, self.displacement_polynom)
+                transfer_result = self.port_reader.send_gyr_calib_mat(
+                    self.calibration_polynom,
+                    self.displacement_polynom
+                )
 
                 if not transfer_result:
-                    self.consoleText.setText('Данные не могут быть перенесены в датчик.')
-                    message = 'Данные не могут быть перенесены в датчик из-за внутренней ошибки'
+                    self.consoleText.setText(
+                        'Данные не могут быть перенесены в датчик.'
+                    )
+                    message = 'Данные не могут быть перенесены в датчик ' \
+                              'из-за внутренней ошибки'
                     error.show_error(message)
                     return
 
         self.equipmentText.setText(text)
         self.consoleText.setText('Данные сохранены в ПЗУ датчика')
 
-    """Данный метод используется для открытия и закрытия общения с COM портом"""
+    """
+    Данный метод используется для открытия и закрытия общения с COM портом
+    """
+
     def open_close_com_port(self):
         if self.open_com:
             self.consoleText.setText('Открытие COM порта.')
@@ -305,15 +372,21 @@ class MainWindow(QMainWindow):
             if not port_seted:
                 message = 'Настройки порта не могут быть совершены'
                 error.show_error(message)
-                self.consoleText.setText('Настройки порта не могут быть совершены')
+                self.consoleText.setText(
+                    'Настройки порта не могут быть совершены'
+                )
                 return
 
             # Открытие порта для работы с ним
             port_opened = self.port_reader.connect()
             if not port_opened:
-                message = 'Открыть порт для работы не возможно, проверьте его доступность'
+                message = 'Открыть порт для работы не возможно, ' \
+                          'проверьте его доступность'
                 error.show_error(message)
-                self.consoleText.setText('Открыть порт для работы не возможно, проверьте его доступность')
+                self.consoleText.setText(
+                    'Открыть порт для работы не возможно, '
+                    'проверьте его доступность'
+                )
                 return
             else:
                 self.openCloseCom.setText('Закрыть порт')
@@ -336,31 +409,43 @@ class MainWindow(QMainWindow):
 
         self.open_com = not self.open_com
 
-    """Данный метод формирует структуру json и сохраняет её в файл. В структуре
-    находятся вычисленные калибровочные матрицы"""
+    """
+    Данный метод формирует структуру json и сохраняет её в файл. В структуре
+    находятся вычисленные калибровочные матрицы
+    """
+
     def save_matrix_in_file(self):
         self.consoleText.setText('Сохранение матрицы в файл.')
         if len(self.matrix) == 0:
-            message = 'Калибровочная матрица ещё не вычеслена или не загружена'
+            message = 'Калибровочная матрица ещё не вычислена или не загружена'
             error.show_error(message)
             return
-        matrix_json = {'matrix': self.matrix}
+        serializable_matrix = self.matrix.tolist()
+        matrix_json = {'matrix': serializable_matrix}
 
-        dialog = QtWidgets.QFileDialog.getSaveFileName(self, 'Сохранить', 'untitled.json',
-                                                       'Json (*.json)')
+        dialog = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            'Сохранить',
+            'untitled.json',
+            'Json (*.json)'
+        )
         url = dialog[0]
-        if not url == '':
+        if url != '':
             with open(url, 'w') as outfile:
                 json.dump(matrix_json, outfile)
         self.consoleText.setText(f'Матрица сохранена в файл: {url}.')
 
-    """Этот метод читает файл типа json и сохраняет матрицу которая содержалась в нем"""
+    """
+    Этот метод читает файл типа json и сохраняет матрицу 
+    которая содержалась в нем
+    """
+
     def load_matrix_from_file(self):
         self.consoleText.setText('Чтение матрицы из файла.')
         dialog = QtWidgets.QFileDialog.getOpenFileName(self, 'Открыть', None,
                                                        'Json (*.json)')
         url = dialog[0]
-        if not url == '':
+        if url != '':
             with open(url) as json_file:
                 try:
                     data = json.load(json_file)
@@ -371,8 +456,11 @@ class MainWindow(QMainWindow):
                     return
 
                 try:
-                    self.matrix = data['matrix']
-                    self.consoleText.setText('Матрица успешно прочитана из файла.')
+                    temp_matrix = data['matrix']
+                    self.matrix = np.array(temp_matrix)
+                    self.consoleText.setText(
+                        'Матрица успешно прочитана из файла.'
+                    )
                 except Exception as e:
                     message = 'Файл не содержит подходящего поля. Убедитесь' \
                               ' что матрица присвоена свойству matrix'
@@ -381,17 +469,20 @@ class MainWindow(QMainWindow):
                     return
 
     '''Функция возврата на предыдущий шаг калибровки'''
+
     def remove_last_step(self):
         try:
             last_mean = self.position_data.pop()
             self.consoleText.setText(f'Значение удалено: \n{last_mean}')
-            self.progress_value -= self.progress_addition[self.eqvView.currentText()]
+            self.progress_value -= self.progress_addition[
+                self.eqvView.currentText()]
             self.progressBar.setValue(int(self.progress_value))
             self.current_step_num -= 1
 
             self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         except Exception as e:
-            message = 'Это первый шаг, повторите действия изображенные на рисунке и нажмите кнопку "Далее"'
+            message = 'Это первый шаг, повторите действия изображенные ' \
+                      'на рисунке и нажмите кнопку "Далее"'
             error.show_error(message)
             print(e)
 

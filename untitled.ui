@@ -146,7 +146,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>Следуйте указаниям с картинок. После выполнения действия нажмите кнопку продолжения колибровки</string>
+      <string>Следуйте указаниям с картинок. После выполнения действия нажмите кнопку продолжения калибровки</string>
      </property>
     </widget>
     <widget class="QProgressBar" name="progressBar">
@@ -438,7 +438,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>Вычесленные матрицы</string>
+      <string>Вычисленная калибровочная матрица</string>
      </property>
     </widget>
     <widget class="QLabel" name="label_7">

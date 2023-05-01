@@ -227,8 +227,8 @@ class MainWindow(QMainWindow):
                         self.accelerometer_allowance
                     )
                     if self.matrix is not None:
-                        self.calibration_polynom, self.displacement_polynom = accel.create_acc_polynom(
-                            self.matrix)
+                        self.calibration_polynom, self.displacement_polynom = \
+                            accel.create_acc_polynom(self.matrix)
                 # Расчет для магнитометра
                 case indicT.Mag:
                     ideal_matrix = magnet.form_ideal_matrix(
@@ -243,8 +243,8 @@ class MainWindow(QMainWindow):
                     )
                     if self.matrix is not None:
                         self.calibration_polynom, \
-                            self.displacement_polynom = magnet.create_mag_polynom(
-                            self.matrix)
+                            self.displacement_polynom = \
+                            magnet.create_mag_polynom(self.matrix)
                 # Расчет для гироскопа
                 case indicT.Gyr:
                     raw_data = gyro.form_raw_data(self.position_data)
@@ -255,9 +255,8 @@ class MainWindow(QMainWindow):
                     )
                     if self.matrix is not None:
                         self.calibration_polynom, \
-                            self.displacement_polynom = gyro.create_gyr_polynom(
-                            self.matrix
-                        )
+                            self.displacement_polynom = \
+                            gyro.create_gyr_polynom(self.matrix)
 
             self.reload_calib = False
             self.calibrationWidjet.hide()
@@ -338,7 +337,9 @@ class MainWindow(QMainWindow):
             # Запись данных для магнитометра
             case indicT.Mag:
                 print(
-                    'Затычка отработала, на момент внедрения функция ещё не готова')
+                    'Затычка отработала, на момент '
+                    'внедрения функция ещё не готова'
+                )
             # Запись данных для гироскопа
             case indicT.Gyr:
                 transfer_result = self.port_reader.send_gyr_calib_mat(

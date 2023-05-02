@@ -6,7 +6,6 @@ import struct
 from numpy.random import uniform
 from numpy import pi, sin, cos
 
-
 """
 Данный программный код не проверяет правильность отправки команд от 
 основного контроллера, а просто, при получении двух команд, отправляет ответ 
@@ -26,7 +25,6 @@ from numpy import pi, sin, cos
     значении 500 для каждого положения датчика будет 500 "считываний".
 * RAW_DATA - Матрица значений, которые будут отправлены на контроллер
 """
-
 
 COM_PORT = "COM2"
 
@@ -432,17 +430,19 @@ with serial.Serial(
                         if TESTING_TYPE == 3:
                             data.aMag = select_data_to_send(
                                 current_step,
-                                i, 
+                                i,
                                 RAW_DATA
                             )
                         serial_port.write(data.generate_hex())
                     current_step += 1
                     print(f"номер измерения: {current_step}")
                     print(data.aAcc)
-                    if current_step == 6:
-                        current_step = 0
-                if(count_aa == 4 and current_step != 1) or (current_step == 1 and count_aa == 5):
+                    if TESTING_TYPE != 3:
+                        if current_step == 6:
+                            current_step = 0
+                    else:
+                        if current_step == 24:
+                            current_step = 0
+                if count_aa == 5:
                     count_aa = 0
             last_byte = current_byte
-
-

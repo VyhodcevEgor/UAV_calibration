@@ -30,6 +30,11 @@ class MainWindow(QMainWindow):
             indicT.Gyr: 16.7,
             indicT.Mag: 4.2
         }
+        self.steps_count = {
+            indicT.Acc: 6,
+            indicT.Gyr: 6,
+            indicT.Mag: 24
+        }
         self.matrix = []
         self.calibration_polynom = []
         self.displacement_polynom = []
@@ -82,7 +87,6 @@ class MainWindow(QMainWindow):
         self.consoleText.setText('Программа запущена и готова к работе.')
 
     """Получение списка доступных портов"""
-
     def serial_ports(self):
         self.consoleText.setText('Список COM портов обновляется.')
         if sys.platform.startswith('win'):
@@ -110,7 +114,6 @@ class MainWindow(QMainWindow):
         self.consoleText.setText('Список COM портов обновлен.')
 
     """Данный метод используется для открытия и закрытия консоли"""
-
     def open_close_console(self):
         self.console_opened = not self.console_opened
 
@@ -123,6 +126,7 @@ class MainWindow(QMainWindow):
             self.consoleText.hide()
             self.resize(800, 554)
 
+    """Данный метод получает картинку для её вставки"""
     def get_image(self, pos_num):
         current_indic = self.eqvView.currentText()
 
@@ -143,7 +147,6 @@ class MainWindow(QMainWindow):
     Данный метод проверяет, происходит ли изменение типа датчика во время 
     калибровки или нет
     """
-
     def sensor_type_change(self):
         if self.calibration_is_start:
             message = 'Нельзя изменять тип датчика во время калибровки'
@@ -157,7 +160,6 @@ class MainWindow(QMainWindow):
     Данный метод начинает выполнение калибровки при нажатии на 
     соответствующую кнопку
     """
-
     def start_calibration(self):
         if self.open_com is True:
             message = 'Невозможно начать калибровку, COM порт не открыт'
@@ -186,12 +188,12 @@ class MainWindow(QMainWindow):
         self.calibrationWidjet.show()
         self.current_step_num = 1
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
+        self.stepNum.setText(f'Шаг {self.current_step_num} из {self.steps_count[self.eqvView.currentText()]}')
 
     """
     Данный метод выполняется каждый раз когда пользователь продолжает 
     калибровку данных
     """
-
     def continue_calibration(self):
         # Начало чтения порта
         raw_dim = self.port_reader.read_sensor_calibration_data(
@@ -208,6 +210,7 @@ class MainWindow(QMainWindow):
             self.eqvView.currentText()]
         self.progressBar.setValue(int(self.progress_value))
         self.current_step_num += 1
+        self.stepNum.setText(f'Шаг {self.current_step_num} из {self.steps_count[self.eqvView.currentText()]}')
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         print(self.current_step_num)
 
@@ -275,7 +278,6 @@ class MainWindow(QMainWindow):
     устройства, которую возможно перенести в оперативную или в постоянную 
     память устройства
     """
-
     def show_calculated_matrix(self):
         text = ''
         for mat_str in self.matrix:
@@ -288,7 +290,6 @@ class MainWindow(QMainWindow):
     Этот метод отвечает за перенос вычисленных данных в оперативную 
     память устройства для которого производилась калибровка
     """
-
     def transfer_data(self):
         self.consoleText.setText(
             'Перенос данных в оперативную память устройства.'
@@ -307,7 +308,6 @@ class MainWindow(QMainWindow):
     Этот метод используется для записи вычисленных данных в постоянную 
     память устройства
     """
-
     def save_in_equipment(self):
         self.consoleText.setText('Сохранение данных в ПЗУ датчика.')
         text = ''
@@ -362,7 +362,6 @@ class MainWindow(QMainWindow):
     """
     Данный метод используется для открытия и закрытия общения с COM портом
     """
-
     def open_close_com_port(self):
         if self.open_com:
             self.consoleText.setText('Открытие COM порта.')
@@ -414,7 +413,6 @@ class MainWindow(QMainWindow):
     Данный метод формирует структуру json и сохраняет её в файл. В структуре
     находятся вычисленные калибровочные матрицы
     """
-
     def save_matrix_in_file(self):
         self.consoleText.setText('Сохранение матрицы в файл.')
         if len(self.matrix) == 0:
@@ -440,7 +438,6 @@ class MainWindow(QMainWindow):
     Этот метод читает файл типа json и сохраняет матрицу 
     которая содержалась в нем
     """
-
     def load_matrix_from_file(self):
         self.consoleText.setText('Чтение матрицы из файла.')
         dialog = QtWidgets.QFileDialog.getOpenFileName(self, 'Открыть', None,
@@ -462,6 +459,10 @@ class MainWindow(QMainWindow):
                     self.consoleText.setText(
                         'Матрица успешно прочитана из файла.'
                     )
+                    self.reload_calib = False
+                    self.calibrationWidjet.hide()
+                    self.resultsWidjet.show()
+                    self.show_calculated_matrix()
                 except Exception as e:
                     message = 'Файл не содержит подходящего поля. Убедитесь' \
                               ' что матрица присвоена свойству matrix'
@@ -469,8 +470,7 @@ class MainWindow(QMainWindow):
                     print(e)
                     return
 
-    '''Функция возврата на предыдущий шаг калибровки'''
-
+    """Функция возврата на предыдущий шаг калибровки"""
     def remove_last_step(self):
         try:
             last_mean = self.position_data.pop()
@@ -479,6 +479,7 @@ class MainWindow(QMainWindow):
                 self.eqvView.currentText()]
             self.progressBar.setValue(int(self.progress_value))
             self.current_step_num -= 1
+            self.stepNum.setText(f'Шаг {self.current_step_num} из {self.steps_count[self.eqvView.currentText()]}')
 
             self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         except Exception as e:

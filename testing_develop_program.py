@@ -415,7 +415,7 @@ with serial.Serial(
                 print(rec_data)
                 rec_data = ""
                 count_aa += 1
-                if count_aa == 2:
+                if count_aa == 3:
                     for i in range(len(RAW_DATA[current_step])):
                         if TESTING_TYPE == 1:
                             data.aAcc = select_data_to_send(
@@ -441,7 +441,7 @@ with serial.Serial(
                     print(data.aAcc)
                     if current_step == 6:
                         current_step = 0
-                if count_aa == 4:
+                if(count_aa == 4 and current_step != 1) or (current_step == 1 and count_aa == 5):
                     count_aa = 0
             last_byte = current_byte
 

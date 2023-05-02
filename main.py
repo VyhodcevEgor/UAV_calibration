@@ -314,6 +314,27 @@ class MainWindow(QMainWindow):
     память устройства
     """
     def save_in_equipment(self):
+        current_indic = self.eqvView.currentText()
+                # Расчет матрицы калибровки для определенного типа датчика
+        match current_indic:
+            # Расчет для акселерометра
+            case indicT.Acc:
+                if self.matrix is not None:
+                    self.calibration_polynom, self.displacement_polynom = \
+                        accel.create_acc_polynom(self.matrix)
+            # Расчет для магнитометра
+            case indicT.Mag:
+                if self.matrix is not None:
+                    self.calibration_polynom, \
+                        self.displacement_polynom = \
+                        magnet.create_mag_polynom(self.matrix)
+            # Расчет для гироскопа
+            case indicT.Gyr:
+                if self.matrix is not None:
+                    self.calibration_polynom, \
+                        self.displacement_polynom = \
+                        gyro.create_gyr_polynom(self.matrix)
+
         self.consoleText.setText('Сохранение данных в ПЗУ датчика.')
         text = ''
         for pol_str in self.calibration_polynom:

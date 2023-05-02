@@ -7,6 +7,7 @@ import serial
 import sys
 import json
 import error
+import last_step_dialog
 import accelerometer as accel
 import magnetometer as magnet
 import gyroscope as gyro
@@ -215,63 +216,67 @@ class MainWindow(QMainWindow):
         print(self.current_step_num)
 
         if self.progress_value >= 100:
-            self.calibration_is_start = False
-            self.consoleText.setText('Начался расчет матриц.')
-            current_indic = self.eqvView.currentText()
-
-            # Расчет матрицы калибровки для определенного типа датчика
-            match current_indic:
-                # Расчет для акселерометра
-                case indicT.Acc:
-                    raw_data = accel.form_raw_data(self.position_data)
-                    self.matrix = accel.calibrate_accelerometer(
-                        raw_data,
-                        self.max_allowance,
-                        self.accelerometer_allowance
-                    )
-                    if self.matrix is not None:
-                        self.calibration_polynom, self.displacement_polynom = \
-                            accel.create_acc_polynom(self.matrix)
-                # Расчет для магнитометра
-                case indicT.Mag:
-                    ideal_matrix = magnet.form_ideal_matrix(
-                        self.magnetometer_allowance
-                    )
-                    raw_data = magnet.form_raw_data(self.position_data)
-                    self.matrix = magnet.calibrate_magnetometer(
-                        raw_data,
-                        ideal_matrix,
-                        self.max_allowance,
-                        self.magnetometer_allowance
-                    )
-                    if self.matrix is not None:
-                        self.calibration_polynom, \
-                            self.displacement_polynom = \
-                            magnet.create_mag_polynom(self.matrix)
-                # Расчет для гироскопа
-                case indicT.Gyr:
-                    raw_data = gyro.form_raw_data(self.position_data)
-                    self.matrix = gyro.calibrate_gyroscope(
-                        raw_data,
-                        self.max_allowance,
-                        self.gyroscope_allowance
-                    )
-                    if self.matrix is not None:
-                        self.calibration_polynom, \
-                            self.displacement_polynom = \
-                            gyro.create_gyr_polynom(self.matrix)
-
-            self.reload_calib = False
-            self.calibrationWidjet.hide()
-
-            if self.matrix is not None:
-                self.consoleText.setText('Расчет матриц завершен.')
-                self.resultsWidjet.show()
-                self.show_calculated_matrix()
+            go_to_last_step = last_step_dialog.show_dialog()
+            if go_to_last_step:
+                self.remove_last_step()
             else:
-                message = 'Расчет матриц не может быть произведен'
-                error.show_error(message)
-                self.consoleText.setText(message)
+                self.calibration_is_start = False
+                self.consoleText.setText('Начался расчет матриц.')
+                current_indic = self.eqvView.currentText()
+
+                # Расчет матрицы калибровки для определенного типа датчика
+                match current_indic:
+                    # Расчет для акселерометра
+                    case indicT.Acc:
+                        raw_data = accel.form_raw_data(self.position_data)
+                        self.matrix = accel.calibrate_accelerometer(
+                            raw_data,
+                            self.max_allowance,
+                            self.accelerometer_allowance
+                        )
+                        if self.matrix is not None:
+                            self.calibration_polynom, self.displacement_polynom = \
+                                accel.create_acc_polynom(self.matrix)
+                    # Расчет для магнитометра
+                    case indicT.Mag:
+                        ideal_matrix = magnet.form_ideal_matrix(
+                            self.magnetometer_allowance
+                        )
+                        raw_data = magnet.form_raw_data(self.position_data)
+                        self.matrix = magnet.calibrate_magnetometer(
+                            raw_data,
+                            ideal_matrix,
+                            self.max_allowance,
+                            self.magnetometer_allowance
+                        )
+                        if self.matrix is not None:
+                            self.calibration_polynom, \
+                                self.displacement_polynom = \
+                                magnet.create_mag_polynom(self.matrix)
+                    # Расчет для гироскопа
+                    case indicT.Gyr:
+                        raw_data = gyro.form_raw_data(self.position_data)
+                        self.matrix = gyro.calibrate_gyroscope(
+                            raw_data,
+                            self.max_allowance,
+                            self.gyroscope_allowance
+                        )
+                        if self.matrix is not None:
+                            self.calibration_polynom, \
+                                self.displacement_polynom = \
+                                gyro.create_gyr_polynom(self.matrix)
+
+                self.reload_calib = False
+                self.calibrationWidjet.hide()
+
+                if self.matrix is not None:
+                    self.consoleText.setText('Расчет матриц завершен.')
+                    self.resultsWidjet.show()
+                    self.show_calculated_matrix()
+                else:
+                    message = 'Расчет матриц не может быть произведен'
+                    error.show_error(message)
+                    self.consoleText.setText(message)
 
     """
     Этот метод отвечает за вывод готовой вычисленной матрицы для

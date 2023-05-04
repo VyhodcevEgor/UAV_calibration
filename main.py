@@ -7,6 +7,7 @@ import serial
 import sys
 import json
 import error
+import last_step_dialog
 import accelerometer as accel
 import magnetometer as magnet
 import gyroscope as gyro
@@ -29,6 +30,11 @@ class MainWindow(QMainWindow):
             indicT.Acc: 16.7,
             indicT.Gyr: 16.7,
             indicT.Mag: 4.2
+        }
+        self.steps_count = {
+            indicT.Acc: 6,
+            indicT.Gyr: 6,
+            indicT.Mag: 24
         }
         self.matrix = []
         self.calibration_polynom = []
@@ -82,7 +88,6 @@ class MainWindow(QMainWindow):
         self.consoleText.setText('Программа запущена и готова к работе.')
 
     """Получение списка доступных портов"""
-
     def serial_ports(self):
         self.consoleText.setText('Список COM портов обновляется.')
         if sys.platform.startswith('win'):
@@ -110,7 +115,6 @@ class MainWindow(QMainWindow):
         self.consoleText.setText('Список COM портов обновлен.')
 
     """Данный метод используется для открытия и закрытия консоли"""
-
     def open_close_console(self):
         self.console_opened = not self.console_opened
 
@@ -123,6 +127,7 @@ class MainWindow(QMainWindow):
             self.consoleText.hide()
             self.resize(800, 554)
 
+    """Данный метод получает картинку для её вставки"""
     def get_image(self, pos_num):
         current_indic = self.eqvView.currentText()
 
@@ -143,7 +148,6 @@ class MainWindow(QMainWindow):
     Данный метод проверяет, происходит ли изменение типа датчика во время 
     калибровки или нет
     """
-
     def sensor_type_change(self):
         if self.calibration_is_start:
             message = 'Нельзя изменять тип датчика во время калибровки'
@@ -157,7 +161,6 @@ class MainWindow(QMainWindow):
     Данный метод начинает выполнение калибровки при нажатии на 
     соответствующую кнопку
     """
-
     def start_calibration(self):
         if self.open_com is True:
             message = 'Невозможно начать калибровку, COM порт не открыт'
@@ -186,12 +189,12 @@ class MainWindow(QMainWindow):
         self.calibrationWidjet.show()
         self.current_step_num = 1
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
+        self.stepNum.setText(f'Шаг {self.current_step_num} из {self.steps_count[self.eqvView.currentText()]}')
 
     """
     Данный метод выполняется каждый раз когда пользователь продолжает 
     калибровку данных
     """
-
     def continue_calibration(self):
         # Начало чтения порта
         raw_dim = self.port_reader.read_sensor_calibration_data(
@@ -208,74 +211,78 @@ class MainWindow(QMainWindow):
             self.eqvView.currentText()]
         self.progressBar.setValue(int(self.progress_value))
         self.current_step_num += 1
+        self.stepNum.setText(f'Шаг {self.current_step_num} из {self.steps_count[self.eqvView.currentText()]}')
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         print(self.current_step_num)
 
         if self.progress_value >= 100:
-            self.calibration_is_start = False
-            self.consoleText.setText('Начался расчет матриц.')
-            current_indic = self.eqvView.currentText()
-
-            # Расчет матрицы калибровки для определенного типа датчика
-            match current_indic:
-                # Расчет для акселерометра
-                case indicT.Acc:
-                    raw_data = accel.form_raw_data(self.position_data)
-                    self.matrix = accel.calibrate_accelerometer(
-                        raw_data,
-                        self.max_allowance,
-                        self.accelerometer_allowance
-                    )
-                    if self.matrix is not None:
-                        self.calibration_polynom, self.displacement_polynom = \
-                            accel.create_acc_polynom(self.matrix)
-                # Расчет для магнитометра
-                case indicT.Mag:
-                    ideal_matrix = magnet.form_ideal_matrix(
-                        self.magnetometer_allowance
-                    )
-                    raw_data = magnet.form_raw_data(self.position_data)
-                    self.matrix = magnet.calibrate_magnetometer(
-                        raw_data,
-                        ideal_matrix,
-                        self.max_allowance,
-                        self.magnetometer_allowance
-                    )
-                    if self.matrix is not None:
-                        self.calibration_polynom, \
-                            self.displacement_polynom = \
-                            magnet.create_mag_polynom(self.matrix)
-                # Расчет для гироскопа
-                case indicT.Gyr:
-                    raw_data = gyro.form_raw_data(self.position_data)
-                    self.matrix = gyro.calibrate_gyroscope(
-                        raw_data,
-                        self.max_allowance,
-                        self.gyroscope_allowance
-                    )
-                    if self.matrix is not None:
-                        self.calibration_polynom, \
-                            self.displacement_polynom = \
-                            gyro.create_gyr_polynom(self.matrix)
-
-            self.reload_calib = False
-            self.calibrationWidjet.hide()
-
-            if self.matrix is not None:
-                self.consoleText.setText('Расчет матриц завершен.')
-                self.resultsWidjet.show()
-                self.show_calculated_matrix()
+            go_to_last_step = last_step_dialog.show_dialog()
+            if go_to_last_step:
+                self.remove_last_step()
             else:
-                message = 'Расчет матриц не может быть произведен'
-                error.show_error(message)
-                self.consoleText.setText(message)
+                self.calibration_is_start = False
+                self.consoleText.setText('Начался расчет матриц.')
+                current_indic = self.eqvView.currentText()
+
+                # Расчет матрицы калибровки для определенного типа датчика
+                match current_indic:
+                    # Расчет для акселерометра
+                    case indicT.Acc:
+                        raw_data = accel.form_raw_data(self.position_data)
+                        self.matrix = accel.calibrate_accelerometer(
+                            raw_data,
+                            self.max_allowance,
+                            self.accelerometer_allowance
+                        )
+                        if self.matrix is not None:
+                            self.calibration_polynom, self.displacement_polynom = \
+                                accel.create_acc_polynom(self.matrix)
+                    # Расчет для магнитометра
+                    case indicT.Mag:
+                        ideal_matrix = magnet.form_ideal_matrix(
+                            self.magnetometer_allowance
+                        )
+                        raw_data = magnet.form_raw_data(self.position_data)
+                        self.matrix = magnet.calibrate_magnetometer(
+                            raw_data,
+                            ideal_matrix,
+                            self.max_allowance,
+                            self.magnetometer_allowance
+                        )
+                        if self.matrix is not None:
+                            self.calibration_polynom, \
+                                self.displacement_polynom = \
+                                magnet.create_mag_polynom(self.matrix)
+                    # Расчет для гироскопа
+                    case indicT.Gyr:
+                        raw_data = gyro.form_raw_data(self.position_data)
+                        self.matrix = gyro.calibrate_gyroscope(
+                            raw_data,
+                            self.max_allowance,
+                            self.gyroscope_allowance
+                        )
+                        if self.matrix is not None:
+                            self.calibration_polynom, \
+                                self.displacement_polynom = \
+                                gyro.create_gyr_polynom(self.matrix)
+
+                self.reload_calib = False
+                self.calibrationWidjet.hide()
+
+                if self.matrix is not None:
+                    self.consoleText.setText('Расчет матриц завершен.')
+                    self.resultsWidjet.show()
+                    self.show_calculated_matrix()
+                else:
+                    message = 'Расчет матриц не может быть произведен'
+                    error.show_error(message)
+                    self.consoleText.setText(message)
 
     """
     Этот метод отвечает за вывод готовой вычисленной матрицы для
     устройства, которую возможно перенести в оперативную или в постоянную 
     память устройства
     """
-
     def show_calculated_matrix(self):
         text = ''
         for mat_str in self.matrix:
@@ -288,7 +295,6 @@ class MainWindow(QMainWindow):
     Этот метод отвечает за перенос вычисленных данных в оперативную 
     память устройства для которого производилась калибровка
     """
-
     def transfer_data(self):
         self.consoleText.setText(
             'Перенос данных в оперативную память устройства.'
@@ -307,8 +313,28 @@ class MainWindow(QMainWindow):
     Этот метод используется для записи вычисленных данных в постоянную 
     память устройства
     """
-
     def save_in_equipment(self):
+        current_indic = self.eqvView.currentText()
+                # Расчет матрицы калибровки для определенного типа датчика
+        match current_indic:
+            # Расчет для акселерометра
+            case indicT.Acc:
+                if self.matrix is not None:
+                    self.calibration_polynom, self.displacement_polynom = \
+                        accel.create_acc_polynom(self.matrix)
+            # Расчет для магнитометра
+            case indicT.Mag:
+                if self.matrix is not None:
+                    self.calibration_polynom, \
+                        self.displacement_polynom = \
+                        magnet.create_mag_polynom(self.matrix)
+            # Расчет для гироскопа
+            case indicT.Gyr:
+                if self.matrix is not None:
+                    self.calibration_polynom, \
+                        self.displacement_polynom = \
+                        gyro.create_gyr_polynom(self.matrix)
+
         self.consoleText.setText('Сохранение данных в ПЗУ датчика.')
         text = ''
         for pol_str in self.calibration_polynom:
@@ -362,7 +388,6 @@ class MainWindow(QMainWindow):
     """
     Данный метод используется для открытия и закрытия общения с COM портом
     """
-
     def open_close_com_port(self):
         if self.open_com:
             self.consoleText.setText('Открытие COM порта.')
@@ -414,7 +439,6 @@ class MainWindow(QMainWindow):
     Данный метод формирует структуру json и сохраняет её в файл. В структуре
     находятся вычисленные калибровочные матрицы
     """
-
     def save_matrix_in_file(self):
         self.consoleText.setText('Сохранение матрицы в файл.')
         if len(self.matrix) == 0:
@@ -440,7 +464,6 @@ class MainWindow(QMainWindow):
     Этот метод читает файл типа json и сохраняет матрицу 
     которая содержалась в нем
     """
-
     def load_matrix_from_file(self):
         self.consoleText.setText('Чтение матрицы из файла.')
         dialog = QtWidgets.QFileDialog.getOpenFileName(self, 'Открыть', None,
@@ -462,6 +485,10 @@ class MainWindow(QMainWindow):
                     self.consoleText.setText(
                         'Матрица успешно прочитана из файла.'
                     )
+                    self.reload_calib = False
+                    self.calibrationWidjet.hide()
+                    self.resultsWidjet.show()
+                    self.show_calculated_matrix()
                 except Exception as e:
                     message = 'Файл не содержит подходящего поля. Убедитесь' \
                               ' что матрица присвоена свойству matrix'
@@ -469,8 +496,7 @@ class MainWindow(QMainWindow):
                     print(e)
                     return
 
-    '''Функция возврата на предыдущий шаг калибровки'''
-
+    """Функция возврата на предыдущий шаг калибровки"""
     def remove_last_step(self):
         try:
             last_mean = self.position_data.pop()
@@ -479,6 +505,7 @@ class MainWindow(QMainWindow):
                 self.eqvView.currentText()]
             self.progressBar.setValue(int(self.progress_value))
             self.current_step_num -= 1
+            self.stepNum.setText(f'Шаг {self.current_step_num} из {self.steps_count[self.eqvView.currentText()]}')
 
             self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         except Exception as e:

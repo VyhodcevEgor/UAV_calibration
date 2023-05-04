@@ -59,6 +59,19 @@ class PortReader:
         self.__gyroscope = []
         self.__accelerometer = []
         self.__magnetometer = []
+        # Обнуления значений датчика
+        switch = ResetAccPolyAll()
+
+        message = switch.generate_hex(
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_ResetPolyAll,
+            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+        )
+        print(message.hex())
+        self.__serial_port.write(message)
+
+        time.sleep(0.1)
 
         # Команда приминения конфигураций
         x_conf_pack = IBCMbConfPayloadS(
@@ -91,6 +104,9 @@ class PortReader:
         byte_line = ""
 
         amount_of_bytes = 0
+        self.__serial_port.reset_input_buffer()
+        time.sleep(0.1)
+        self.__serial_port.reset_input_buffer()
 
         while not self.__stop_thread:
             prev_byte = this_byte
@@ -265,23 +281,12 @@ class PortReader:
         :return: True - успешная запись
         """
         try:
-            switch = ResetGyrPolyAll()
-
-            message = switch.generate_hex(
-                CAServicesIDE.CA_ID_iBCM,
-                CAServicesIDE.CA_ID_iBCM,
-                ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_ResetPolyAll,
-                CaCrcType.SFH_CRC_TYPE_FIX_16BIT
-            )
-            self.__serial_port.write(message)
-
-            time.sleep(0.1)
 
             gyr_poly_calib_mat = GyroscopeCalibrationPolynomial(poly_calib_matrix)
 
             message = gyr_poly_calib_mat.generate_hex(
-                CAServicesIDE.CA_ID_iBCM,
-                CAServicesIDE.CA_ID_iBCM,
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
                 ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_ReadPolyCalibMat,
                 CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
             )
@@ -292,8 +297,8 @@ class PortReader:
             gyr_poly_offset_mat = GyroscopeOffsetPolynomial(poly_offset_matrix)
 
             message = gyr_poly_offset_mat.generate_hex(
-                CAServicesIDE.CA_ID_iBCM,
-                CAServicesIDE.CA_ID_iBCM,
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
                 ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_ReadPolyOffsetMat,
                 CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
             )
@@ -312,25 +317,12 @@ class PortReader:
         :return: True - успешная запись
         """
         try:
-            switch = ResetAccPolyAll()
-
-            message = switch.generate_hex(
-                CAServicesIDE.CA_ID_iBCM,
-                CAServicesIDE.CA_ID_iBCM,
-                ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_ResetPolyAll,
-                CaCrcType.SFH_CRC_TYPE_FIX_16BIT
-            )
-            print(message.hex())
-            self.__serial_port.write(message)
-
-            time.sleep(0.1)
-
             acc_poly_calib_mat = AccelerometerCalibrationPolynomial(poly_calib_matrix)
 
             message = acc_poly_calib_mat.generate_hex(
-                CAServicesIDE.CA_ID_iBCM,
-                CAServicesIDE.CA_ID_iBCM,
-                ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_ReadPolyCalibMat,
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
+                ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_ReadPolyCalibMat,
                 CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
             )
             print(message.hex())
@@ -341,9 +333,9 @@ class PortReader:
             acc_poly_offset_mat = AccelerometerOffsetPolynomial(poly_offset_matrix)
 
             message = acc_poly_offset_mat.generate_hex(
-                CAServicesIDE.CA_ID_iBCM,
-                CAServicesIDE.CA_ID_iBCM,
-                ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_ReadPolyOffsetMat,
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
+                ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_ReadPolyOffsetMat,
                 CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
             )
             print(message.hex())

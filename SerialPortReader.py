@@ -441,6 +441,7 @@ class PortReader:
             return False
 
     def send_to_pdu(self, sensor_type: SensorIndicatorType):
+        msg = ""
         if sensor_type == SensorIndicatorType.Gyr:
             msg = PDUWriter.send_to_pdu(
                 CAServicesIDE.CA_ID_CALIB_GYRACC,
@@ -462,6 +463,7 @@ class PortReader:
                 MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB,
                 CaCrcType.SFH_CRC_TYPE_FIX_16BIT
             )
+        self.__serial_port.write(msg)
 
 
 """

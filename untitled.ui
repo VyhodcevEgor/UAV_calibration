@@ -15,7 +15,7 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>800</width>
+    <width>850</width>
     <height>580</height>
    </size>
   </property>
@@ -26,7 +26,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Калибровка сенсоров БЛА</string>
   </property>
   <widget class="QWidget" name="mainWidjet">
    <widget class="QComboBox" name="eqvView">
@@ -541,6 +541,22 @@
     </property>
     <property name="text">
      <string>Обновить</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="stopButton">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>200</y>
+      <width>161</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border:2px solid rgb(255, 65, 48); background-color:rgb(225, 225, 225)</string>
+    </property>
+    <property name="text">
+     <string>Завершить калибровку</string>
     </property>
    </widget>
   </widget>

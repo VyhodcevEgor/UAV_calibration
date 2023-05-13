@@ -9,8 +9,8 @@ class Dialog(QDialog):
 
         self.return_to_last = False
 
-        self.yesButton.clicked.connect(self.back_to_last_step)
-        self.noButton.clicked.connect(self.close)
+        self.noButton.clicked.connect(self.back_to_last_step)
+        self.yesButton.clicked.connect(self.close)
 
     def back_to_last_step(self):
         self.return_to_last = True

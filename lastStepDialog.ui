@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Внимание!</string>
   </property>
   <widget class="QLabel" name="label">
    <property name="geometry">
@@ -29,7 +29,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Выполнен последний шаг калибровки, совершить повторную попытку последнего шага?</string>
+    <string>Выполнен последний шаг калибровки, продолжить?</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
@@ -54,14 +54,14 @@
   <widget class="QPushButton" name="noButton">
    <property name="geometry">
     <rect>
-     <x>280</x>
+     <x>194</x>
      <y>160</y>
-     <width>75</width>
+     <width>161</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
-    <string>Нет</string>
+    <string>Повторить последний шаг</string>
    </property>
   </widget>
  </widget>

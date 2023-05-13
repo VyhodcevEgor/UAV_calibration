@@ -57,6 +57,7 @@ class MainWindow(QMainWindow):
             self.consoleText.hide()
         self.resultsWidjet.hide()
         self.calibrationWidjet.hide()
+        self.stopButton.hide()
 
         # Присоединение методов к событиям
         self.consoleButton.clicked.connect(self.open_close_console)
@@ -70,6 +71,7 @@ class MainWindow(QMainWindow):
         self.reloadButton.clicked.connect(self.serial_ports)
         self.backButton.clicked.connect(self.remove_last_step)
         self.eqvView.currentTextChanged.connect(self.sensor_type_change)
+        self.stopButton.clicked.connect(self.stop_calibration)
 
         self.views = [indicT.Acc, indicT.Gyr, indicT.Mag]
         self.serial_ports()
@@ -155,7 +157,19 @@ class MainWindow(QMainWindow):
             self.consoleText.setText(message)
             self.eqvView.setCurrentText(self.current_sensor)
 
+        last_sensor = self.current_sensor
         self.current_sensor = self.eqvView.currentText()
+
+        match self.current_sensor:
+            case indicT.Acc:
+                if not self.current_sensor == last_sensor:
+                    self.resultsWidjet.hide()
+            case indicT.Mag:
+                if not self.current_sensor == last_sensor:
+                    self.resultsWidjet.hide()
+            case indicT.Gyr:
+                if not self.current_sensor == last_sensor:
+                    self.resultsWidjet.hide()
 
     """
     Данный метод начинает выполнение калибровки при нажатии на 
@@ -190,6 +204,24 @@ class MainWindow(QMainWindow):
         self.current_step_num = 1
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         self.stepNum.setText(f'Шаг {self.current_step_num} из {self.steps_count[self.eqvView.currentText()]}')
+        self.startButton.setText('Начать заново')
+        self.stopButton.show()
+
+    """Метод завершения калибровки по инициативе пользователя"""
+    def stop_calibration(self):
+        # Обнуляем данные
+        self.progress_value = 0
+        self.position_data = []
+        self.calibration_is_start = False
+        self.reload_calib = False
+
+        # Меняем пользовательский интерфейс
+        self.startButton.setText('Начать калибровку')
+        self.calibrationWidjet.hide()
+        self.stopButton.hide()
+
+        # Выводим сообщения пользователю
+        self.consoleText.setText('Калибровка завершена досрочно.')
 
     """
     Данный метод выполняется каждый раз когда пользователь продолжает 
@@ -270,7 +302,9 @@ class MainWindow(QMainWindow):
                                 gyro.create_gyr_polynom(self.matrix)
 
                 self.reload_calib = False
+                self.startButton.setText('Начать калибровку')
                 self.calibrationWidjet.hide()
+                self.stopButton.hide()
 
                 if self.matrix is not None:
                     self.consoleText.setText('Расчет матриц завершен.')
@@ -290,7 +324,7 @@ class MainWindow(QMainWindow):
         text = ''
         for mat_str in self.matrix:
             for elem in mat_str:
-                text += str(elem) + '  '
+                text += f'{elem:.5f} '
             text += '\n\n'
         self.calculatedText.setText(text)
 
@@ -299,26 +333,8 @@ class MainWindow(QMainWindow):
     память устройства для которого производилась калибровка
     """
     def transfer_data(self):
-        self.consoleText.setText(
-            'Перенос данных в оперативную память устройства.'
-        )
-        text = ''
-        for pol_str in self.calibration_polynom:
-            for elem in pol_str:
-                text += str(elem) + '  '
-            text += '\n\n'
-        self.equipmentText.setText(text)
-        self.consoleText.setText(
-            'Данные перенесены в оперативную память устройства.'
-        )
-
-    """
-    Этот метод используется для записи вычисленных данных в постоянную 
-    память устройства
-    """
-    def save_in_equipment(self):
         current_indic = self.eqvView.currentText()
-                # Расчет матрицы калибровки для определенного типа датчика
+        # Расчет матрицы калибровки для определенного типа датчика
         match current_indic:
             # Расчет для акселерометра
             case indicT.Acc:
@@ -338,11 +354,26 @@ class MainWindow(QMainWindow):
                         self.displacement_polynom = \
                         gyro.create_gyr_polynom(self.matrix)
 
-        self.consoleText.setText('Сохранение данных в ПЗУ датчика.')
-        text = ''
+        self.consoleText.setText('Перенос данных в оперативную память устройства.')
+
+        text = 'Калибровочный полином:\n\n'
         for pol_str in self.calibration_polynom:
             for elem in pol_str:
-                text += str(elem) + '  '
+                elem_str = f'{elem:.5f} '
+                if not elem == 0:
+                    text += elem_str
+                else:
+                    text += '0 '
+            text += '\n\n'
+
+        text += 'Полином смещения:\n\n'
+        for pol_str in self.displacement_polynom:
+            for elem in pol_str:
+                elem_str = f'{elem:.5f} '
+                if not elem == 0:
+                    text += elem_str
+                else:
+                    text += '0 '
             text += '\n\n'
 
         current_indic = self.eqvView.currentText()
@@ -386,7 +417,61 @@ class MainWindow(QMainWindow):
                     return
 
         self.equipmentText.setText(text)
-        self.consoleText.setText('Данные сохранены в ПЗУ датчика')
+        self.consoleText.setText('Данные перенесены в оперативную память устройства.')
+
+    """
+    Этот метод используется для записи вычисленных данных в постоянную 
+    память устройства
+    """
+    def save_in_equipment(self):
+        current_indic = self.eqvView.currentText()
+        # Расчет матрицы калибровки для определенного типа датчика
+        match current_indic:
+            # Расчет для акселерометра
+            case indicT.Acc:
+                if self.matrix is not None:
+                    self.calibration_polynom, self.displacement_polynom = \
+                        accel.create_acc_polynom(self.matrix)
+            # Расчет для магнитометра
+            case indicT.Mag:
+                if self.matrix is not None:
+                    self.calibration_polynom, \
+                        self.displacement_polynom = \
+                        magnet.create_mag_polynom(self.matrix)
+            # Расчет для гироскопа
+            case indicT.Gyr:
+                if self.matrix is not None:
+                    self.calibration_polynom, \
+                        self.displacement_polynom = \
+                        gyro.create_gyr_polynom(self.matrix)
+
+        self.consoleText.setText(
+            'Сохранение данных в ПЗУ датчика.'
+        )
+        text = 'Калибровочный полином:\n\n'
+        for pol_str in self.calibration_polynom:
+            for elem in pol_str:
+                elem_str = f'{elem:.5f} '
+                if not elem == 0:
+                    text += elem_str
+                else:
+                    text += '0 '
+            text += '\n\n'
+
+        text += 'Полином смещения:\n\n'
+        for pol_str in self.displacement_polynom:
+            for elem in pol_str:
+                elem_str = f'{elem:.5f} '
+                if not elem == 0:
+                    text += elem_str
+                else:
+                    text += '0 '
+            text += '\n\n'
+
+        self.equipmentText.setText(text)
+        self.consoleText.setText(
+            'Данные сохранены в ПЗУ датчика.'
+        )
 
     """
     Данный метод используется для открытия и закрытия общения с COM портом

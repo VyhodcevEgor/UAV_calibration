@@ -210,7 +210,10 @@ class MainWindow(QMainWindow):
         self.progress_value += self.progress_addition[
             self.eqvView.currentText()]
         self.progressBar.setValue(int(self.progress_value))
-        self.current_step_num += 1
+
+        if not self.current_step_num == 6:
+            self.current_step_num += 1
+
         self.stepNum.setText(f'Шаг {self.current_step_num} из {self.steps_count[self.eqvView.currentText()]}')
         self.indicPosition.setPixmap(self.get_image(self.current_step_num))
         print(self.current_step_num)

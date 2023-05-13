@@ -20,6 +20,7 @@ from DataTypes import AccelerometerCalibrationPolynomial
 from DataTypes import AccelerometerOffsetPolynomial
 from DataTypes import ResetGyrPolyAll
 from DataTypes import ResetAccPolyAll
+from DataTypes import ResetMagPolyAll
 
 
 class PortReader:
@@ -59,19 +60,6 @@ class PortReader:
         self.__gyroscope = []
         self.__accelerometer = []
         self.__magnetometer = []
-        # Обнуления значений датчика
-        switch = ResetAccPolyAll()
-
-        message = switch.generate_hex(
-            CAServicesIDE.CA_ID_CALIB_GYRACC,
-            CAServicesIDE.CA_ID_CALIB_GYRACC,
-            ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_ResetPolyAll,
-            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
-        )
-        print(message.hex())
-        self.__serial_port.write(message)
-
-        time.sleep(0.1)
 
         # Команда приминения конфигураций
         x_conf_pack = IBCMbConfPayloadS(
@@ -225,6 +213,63 @@ class PortReader:
         result = self.__stop_read_calibration_data()
         return result
 
+    def check_controller_calibration_matrix(self, read_type: SensorIndicatorType):
+        """
+        Функция для проверки матрицы, хранящейся в контроллере
+        :param read_type: Тип датчкиа, для которого получаем матрицу с контроллера
+        :return: True - если матрица соотвествует значения по умолчанию
+        """
+        pass
+
+    def reset_controller_calibration_matrix(self, read_type: SensorIndicatorType):
+        """
+        Функция для сброса матрицы, хранящейся в контроллере
+        :param read_type: Тип датчкиа, для которого сбрасываем матрицу с контроллера
+        :return: True - если все прошло успешно
+        """
+        try:
+            if self.__indicator_type == SensorIndicatorType.Gyr:
+                # Обнуления значений датчика
+                switch = ResetAccPolyAll()
+
+                message = switch.generate_hex(
+                    CAServicesIDE.CA_ID_CALIB_GYRACC,
+                    CAServicesIDE.CA_ID_CALIB_GYRACC,
+                    ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_ResetPolyAll,
+                    CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+                )
+                # print(message.hex())
+                self.__serial_port.write(message)
+
+                time.sleep(0.1)
+            elif self.__indicator_type == SensorIndicatorType.Acc:
+                # Обнуления значений датчика
+                switch = ResetGyrPolyAll()
+
+                message = switch.generate_hex(
+                    CAServicesIDE.CA_ID_CALIB_GYRACC,
+                    CAServicesIDE.CA_ID_CALIB_GYRACC,
+                    ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_ResetPolyAll,
+                    CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+                )
+
+                self.__serial_port.write(message)
+
+            elif self.__indicator_type == SensorIndicatorType.Mag:
+                switch = ResetMagPolyAll()
+
+                message = switch.generate_hex(
+                    CAServicesIDE.CA_ID_MAG_CALIB,
+                    CAServicesIDE.CA_ID_MAG_CALIB,
+                    MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_RESET_MATRIX_ALL,
+                    CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+                )
+
+                self.__serial_port.write(message)
+            return True
+        except serial.serialutil.SerialException:
+            return False
+
     def __start_read_calibration_data(self, read_type: SensorIndicatorType):
         """
         Пример вызова self.start_read(SensorIndicatorType.Mag) - считать показатели магнитометра
@@ -325,7 +370,7 @@ class PortReader:
                 ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_ReadPolyCalibMat,
                 CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
             )
-            print(message.hex())
+            # print(message.hex())
             self.__serial_port.write(message)
 
             time.sleep(0.1)
@@ -338,7 +383,7 @@ class PortReader:
                 ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_ReadPolyOffsetMat,
                 CaCrcType.SFH_CRC_TYPE_SIZE_32BIT
             )
-            print(message.hex())
+            # print(message.hex())
             self.__serial_port.write(message)
 
             return True

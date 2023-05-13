@@ -153,6 +153,7 @@ class MagnetometerOffsetMatrix:
     """
     Класс для описания матрицы смещений магнитометра
     """
+
     def __init__(self, matrix):
         """
         :param matrix: матрица смещений магнитометра
@@ -234,15 +235,33 @@ class ResetAccPolyAll:
         return header + struct.pack("h", 21845)
 
 
+class ResetMagAll:
+    @staticmethod
+    def generate_hex(sender_id, recipient_id, pack_id, crc_type):
+        """
+           Функция и класс нужны для очистки значений акселерометра, находящихся на контроллере
+           :param sender_id: отправитель
+           :param recipient_id: получатель
+           :param pack_id: тип нагрузки для компьютера
+           :param crc_type: тип контрольной суммы
+           :return: возвращает сообщения для отправки на контроллер
+        """
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
+        print(struct.pack("h", 21845).hex())
+        return header + struct.pack("h", 21845)
+
+
 class GyroscopeCalibrationPolynomial:
-    def __init__(self, gyr_poly_calib_mat):
+    def __init__(self, gyr_poly_calib_mat=None):
+        if gyr_poly_calib_mat is None:
+            gyr_poly_calib_mat = [[0]]
         self.__payload_size = 9 * 6 * 4
         self.__gyr_poly_calib_mat = gyr_poly_calib_mat
 
     def rewrite_matrix(self, gyr_poly_calib_mat):
         self.__gyr_poly_calib_mat = gyr_poly_calib_mat
 
-    def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
+    def generate_write_hex(self, sender_id, recipient_id, pack_id, crc_type):
         header = generate_header(sender_id, recipient_id, pack_id, crc_type, self.__payload_size)
 
         pay_load = ""
@@ -260,16 +279,37 @@ class GyroscopeCalibrationPolynomial:
         crc = struct.pack("I", crc)
         return header + pay_load + crc
 
+    def get_gyr_cal_pol_mat(self, data):
+        pay_load = data[16:232]
+        gyr_cal_pol_mat = []
+        pos = 0
+        for i in range(9):
+            temp_arr = []
+            for j in range(6):
+                temp = struct.unpack("f", pay_load[pos:pos + 4])[0]
+                temp_arr.append(temp)
+                pos += 4
+            gyr_cal_pol_mat.append(temp_arr)
+        self.rewrite_matrix(gyr_cal_pol_mat)
+        return gyr_cal_pol_mat
+
+    @staticmethod
+    def generate_read_hex(sender_id, recipient_id, pack_id, crc_type):
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
+        return header + struct.pack("h", 21845)
+
 
 class GyroscopeOffsetPolynomial:
-    def __init__(self, gyr_poly_off_mat):
+    def __init__(self, gyr_poly_off_mat=None):
+        if gyr_poly_off_mat is None:
+            gyr_poly_off_mat = [[0]]
         self.__payload_size = 3 * 6 * 4
         self.__gyr_poly_off_mat = gyr_poly_off_mat
 
     def rewrite_matrix(self, gyr_poly_off_mat):
         self.__gyr_poly_off_mat = gyr_poly_off_mat
 
-    def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
+    def generate_write_hex(self, sender_id, recipient_id, pack_id, crc_type):
         header = generate_header(sender_id, recipient_id, pack_id, crc_type, self.__payload_size)
 
         pay_load = ""
@@ -287,16 +327,37 @@ class GyroscopeOffsetPolynomial:
         crc = struct.pack("I", crc)
         return header + pay_load + crc
 
+    def get_gyr_off_mat(self, data):
+        pay_load = data[16:88]
+        gyr_off_mat = []
+        pos = 0
+        for i in range(3):
+            temp_arr = []
+            for j in range(6):
+                temp = struct.unpack("f", pay_load[pos:pos + 4])[0]
+                temp_arr.append(temp)
+                pos += 4
+            gyr_off_mat.append(temp_arr)
+        self.rewrite_matrix(gyr_off_mat)
+        return gyr_off_mat
+
+    @staticmethod
+    def generate_read_hex(sender_id, recipient_id, pack_id, crc_type):
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
+        return header + struct.pack("h", 21845)
+
 
 class AccelerometerCalibrationPolynomial:
-    def __init__(self, acc_poly_calib_mat):
+    def __init__(self, acc_poly_calib_mat=None):
+        if acc_poly_calib_mat is None:
+            acc_poly_calib_mat = [[0]]
         self.__payload_size = 9 * 6 * 4
         self.__acc_poly_calib_mat = acc_poly_calib_mat
 
     def rewrite_matrix(self, acc_poly_calib_mat):
         self.__acc_poly_calib_mat = acc_poly_calib_mat
 
-    def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
+    def generate_write_hex(self, sender_id, recipient_id, pack_id, crc_type):
         header = generate_header(sender_id, recipient_id, pack_id, crc_type, self.__payload_size)
 
         pay_load = ""
@@ -314,9 +375,30 @@ class AccelerometerCalibrationPolynomial:
         crc = struct.pack("I", crc)
         return header + pay_load + crc
 
+    def get_acc_cal_pol_mat(self, data):
+        pay_load = data[16:232]
+        acc_cal_pol_mat = []
+        pos = 0
+        for i in range(9):
+            temp_arr = []
+            for j in range(6):
+                temp = struct.unpack("f", pay_load[pos:pos + 4])[0]
+                temp_arr.append(temp)
+                pos += 4
+            acc_cal_pol_mat.append(temp_arr)
+        self.rewrite_matrix(acc_cal_pol_mat)
+        return acc_cal_pol_mat
+
+    @staticmethod
+    def generate_read_hex(sender_id, recipient_id, pack_id, crc_type):
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
+        return header + struct.pack("h", 21845)
+
 
 class AccelerometerOffsetPolynomial:
-    def __init__(self, acc_poly_off_mat):
+    def __init__(self, acc_poly_off_mat=None):
+        if acc_poly_off_mat is None:
+            acc_poly_off_mat = [[0]]
         self.__payload_size = 3 * 6 * 4
         self.__acc_poly_off_mat = acc_poly_off_mat
 
@@ -340,6 +422,25 @@ class AccelerometerOffsetPolynomial:
 
         crc = struct.pack("I", crc)
         return header + pay_load + crc
+
+    def get_acc_off_mat(self, data):
+        pay_load = data[16:88]
+        acc_off_mat = []
+        pos = 0
+        for i in range(3):
+            temp_arr = []
+            for j in range(6):
+                temp = struct.unpack("f", pay_load[pos:pos + 4])[0]
+                temp_arr.append(temp)
+                pos += 4
+            acc_off_mat.append(temp_arr)
+        self.rewrite_matrix(acc_off_mat)
+        return acc_off_mat
+
+    @staticmethod
+    def generate_read_hex(sender_id, recipient_id, pack_id, crc_type):
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
+        return header + struct.pack("h", 21845)
 
 
 class MagnetometerCalibrationMatrix:
@@ -516,3 +617,14 @@ class IBCMAllMeasPayloads:
         result += a_mag
         result += self.__bytes_data[68::]
         return result
+
+
+class PDUWriter:
+    @staticmethod
+    def send_to_pdu(sender_id, recipient_id, pack_id, crc_type):
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
+        # sender_id_hex = struct.pack("B", sender_id) 4 CAServicesIDE.CA_ID_CALIB_GYRACC
+        # recipient_id_hex = struct.pack("B", recipient_id) 11 CAServicesIDE.CA_ID_CALIB_GYRACC
+        # pack_id_hex = struct.pack("I", pack_id) 22 ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_WritePolyInEEPROM
+        # crc_type_hex = struct.pack("I", crc_type) 3 SFH_CRC_TYPE_FIX_16BIT
+        return header + struct.pack("h", 21845)

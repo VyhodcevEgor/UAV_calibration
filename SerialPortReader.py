@@ -20,6 +20,8 @@ from DataTypes import AccelerometerCalibrationPolynomial
 from DataTypes import AccelerometerOffsetPolynomial
 from DataTypes import ResetGyrPolyAll
 from DataTypes import ResetAccPolyAll
+from DataTypes import ResetMagAll
+from DataTypes import PDUWriter
 
 
 class PortReader:
@@ -47,6 +49,113 @@ class PortReader:
         except serial.serialutil.SerialException:
             return False
 
+    def reset_acc_data(self):
+        switch = ResetAccPolyAll()
+
+        message = switch.generate_hex(
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_ResetPolyAll,
+            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+        )
+        print(message.hex())
+        self.__serial_port.write(message)
+
+    def reset_mag_data(self):
+        switch = ResetMagAll()
+
+        message = switch.generate_hex(
+            CAServicesIDE.CA_ID_MAG_CALIB,
+            CAServicesIDE.CA_ID_MAG_CALIB,
+            MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_RESET_MATRIX_ALL,
+            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+        )
+        print(message.hex())
+        self.__serial_port.write(message)
+
+    def reset_gyr_data(self):
+        switch = ResetGyrPolyAll()
+
+        message = switch.generate_hex(
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_ResetPolyAll,
+            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+        )
+        print(message.hex())
+        self.__serial_port.write(message)
+
+    def read_acc_data(self):
+        """
+        Нужная для считывания данных акселерометра из контроллера
+        :return: Возвращает сначала полином калибровки акселерометра из контроллера, потом полином смещения
+        """
+
+        acc_poly_calib_mat = AccelerometerCalibrationPolynomial()
+
+        message = acc_poly_calib_mat.generate_read_hex(
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_SendPolyCalibMat,
+            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+        )
+        self.__serial_port.write(message)
+        # ответ 236 байт
+        gyr_cal_pol = self.__serial_port.read(236).hex()
+        data = bytes.fromhex(gyr_cal_pol)
+        gyr_cal_pol = acc_poly_calib_mat.get_acc_cal_pol_mat(data)
+
+        acc_off_calib_mat = AccelerometerOffsetPolynomial()
+
+        message = acc_off_calib_mat.generate_read_hex(
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_SendPolyOffsetMat,
+            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+        )
+        self.__serial_port.write(message)
+        # ответ 92 байта
+        acc_off = self.__serial_port.read(92).hex()
+        data = bytes.fromhex(acc_off)
+        acc_off = acc_off_calib_mat.get_acc_off_mat(data)
+        return gyr_cal_pol, acc_off
+
+    def read_mag_data(self):
+        pass
+
+    def read_gyr_data(self):
+        """
+        Нужная для считывания данных гироскопа из контроллера
+        :return: Возвращает сначала полином калибровки гироскопа из контроллера, потом полином смещения
+        """
+        gyr_poly_calib_mat = GyroscopeCalibrationPolynomial()
+
+        message = gyr_poly_calib_mat.generate_read_hex(
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_SendPolyCalibMat,
+            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+        )
+        self.__serial_port.write(message)
+        # ответ 236 байт
+        gyr_cal_pol = self.__serial_port.read(236).hex()
+        data = bytes.fromhex(gyr_cal_pol)
+        gyr_cal_pol = gyr_poly_calib_mat.get_gyr_cal_pol_mat(data)
+
+        gyr_off_calib_mat = GyroscopeOffsetPolynomial()
+        message = gyr_poly_calib_mat.generate_read_hex(
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            CAServicesIDE.CA_ID_CALIB_GYRACC,
+            ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_SendPolyOffsetMat,
+            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+        )
+        self.__serial_port.write(message)
+        # ответ 92 байта
+        gyr_off = self.__serial_port.read(92).hex()
+        data = bytes.fromhex(gyr_off)
+        gyr_off = gyr_off_calib_mat.get_gyr_off_mat(data)
+        return gyr_cal_pol, gyr_off
+
     def __read(self):
         """
         Функция считывает данные с контроллера и считается 'приватной'
@@ -59,21 +168,7 @@ class PortReader:
         self.__gyroscope = []
         self.__accelerometer = []
         self.__magnetometer = []
-        # Обнуления значений датчика
-        switch = ResetAccPolyAll()
-
-        message = switch.generate_hex(
-            CAServicesIDE.CA_ID_CALIB_GYRACC,
-            CAServicesIDE.CA_ID_CALIB_GYRACC,
-            ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_ResetPolyAll,
-            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
-        )
-        print(message.hex())
-        self.__serial_port.write(message)
-
-        time.sleep(0.1)
-
-        # Команда приминения конфигураций
+        # Команда применения конфигураций
         x_conf_pack = IBCMbConfPayloadS(
             baud_rate=self.__serial_port.baudrate,
             ul_dt_us=10000,
@@ -172,7 +267,7 @@ class PortReader:
         except serial.serialutil.SerialException:
             return False
 
-    def write_magnetometer_calibration_matrix(self, matrix):
+    def send_mag_calib_mat(self, matrix):
         """
         Функция записывает калибровочную матрицу магнитометра в память контроллера через открытый ком порт
         :param matrix: калибровочная матрица магнитометра, float [3][3]
@@ -191,10 +286,10 @@ class PortReader:
         except serial.serialutil.SerialException:
             return False
 
-    def write_magnetometer_offset_matrix(self, matrix):
+    def send_mag_offset_mat(self, matrix):
         """
         Функция записывает матрицу смещения магнитометра в память контроллера через открытый ком порт
-        :param matrix: матриа смещения, float [3][1]
+        :param matrix: матрица смещения, float [3][1]
         :return: Статус выполнения записи матрицы
         """
         try:
@@ -284,7 +379,7 @@ class PortReader:
 
             gyr_poly_calib_mat = GyroscopeCalibrationPolynomial(poly_calib_matrix)
 
-            message = gyr_poly_calib_mat.generate_hex(
+            message = gyr_poly_calib_mat.generate_write_hex(
                 CAServicesIDE.CA_ID_CALIB_GYRACC,
                 CAServicesIDE.CA_ID_CALIB_GYRACC,
                 ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_ReadPolyCalibMat,
@@ -296,7 +391,7 @@ class PortReader:
 
             gyr_poly_offset_mat = GyroscopeOffsetPolynomial(poly_offset_matrix)
 
-            message = gyr_poly_offset_mat.generate_hex(
+            message = gyr_poly_offset_mat.generate_write_hex(
                 CAServicesIDE.CA_ID_CALIB_GYRACC,
                 CAServicesIDE.CA_ID_CALIB_GYRACC,
                 ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGYR_MCU_ReadPolyOffsetMat,
@@ -319,7 +414,7 @@ class PortReader:
         try:
             acc_poly_calib_mat = AccelerometerCalibrationPolynomial(poly_calib_matrix)
 
-            message = acc_poly_calib_mat.generate_hex(
+            message = acc_poly_calib_mat.generate_write_hex(
                 CAServicesIDE.CA_ID_CALIB_GYRACC,
                 CAServicesIDE.CA_ID_CALIB_GYRACC,
                 ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_ReadPolyCalibMat,
@@ -344,6 +439,31 @@ class PortReader:
             return True
         except serial.serialutil.SerialException:
             return False
+
+    def send_to_pdu(self, sensor_type: SensorIndicatorType):
+        msg = ""
+        if sensor_type == SensorIndicatorType.Gyr:
+            msg = PDUWriter.send_to_pdu(
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
+                ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvGyr_MCU_WritePolyInEEPROM,
+                CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+            )
+        elif sensor_type == SensorIndicatorType.Acc:
+            msg = PDUWriter.send_to_pdu(
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
+                CAServicesIDE.CA_ID_CALIB_GYRACC,
+                ICALIBGYRACCParseMessageAPI.ICALIB_GYRACC_PARSE_MESSAGE_API_prvAcc_MCU_WritePolyInEEPROM,
+                CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+            )
+        elif sensor_type == SensorIndicatorType.Mag:
+            msg = PDUWriter.send_to_pdu(
+                CAServicesIDE.CA_ID_MAG_CALIB,
+                CAServicesIDE.CA_ID_MAG_CALIB,
+                MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB,
+                CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+            )
+        self.__serial_port.write(msg)
 
 
 """

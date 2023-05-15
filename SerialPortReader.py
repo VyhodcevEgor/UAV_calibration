@@ -121,7 +121,36 @@ class PortReader:
         return gyr_cal_pol, acc_off
 
     def read_mag_data(self):
-        pass
+        """
+        Считывает данные с контроллера
+        :return: Возвращает матрицу [3][3] магнитометра и матрицу смещения [3][1]
+        """
+        mag_calib_mat = MagnetometerCalibrationMatrix()
+
+        message = mag_calib_mat.generate_read_hex(
+            CAServicesIDE.CA_ID_MAG_CALIB,
+            CAServicesIDE.CA_ID_MAG_CALIB,
+            MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_SEND_MATRIX_CALIB,
+            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+        )
+        self.__serial_port.write(message)
+        data = self.__serial_port.read(56).hex()
+        data = bytes.fromhex(data)
+        mag_calib_mat = mag_calib_mat.get_mag_calib_mat(data)
+
+        mag_off_mat = MagnetometerOffsetMatrix()
+
+        message = mag_off_mat.generate_read_hex(
+            CAServicesIDE.CA_ID_MAG_CALIB,
+            CAServicesIDE.CA_ID_MAG_CALIB,
+            MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_SEND_MATRIX_OFFSET,
+            CaCrcType.SFH_CRC_TYPE_FIX_16BIT
+        )
+        self.__serial_port.write(message)
+        data = self.__serial_port.read(32).hex()
+        data = bytes.fromhex(data)
+        mag_off_mat = mag_off_mat.get_mag_off_mat(data)
+        return mag_calib_mat, mag_off_mat
 
     def read_gyr_data(self):
         """
@@ -275,7 +304,7 @@ class PortReader:
         """
         try:
             magnetometer = MagnetometerCalibrationMatrix(matrix)
-            message = magnetometer.generate_hex(
+            message = magnetometer.generate_write_hex(
                 CAServicesIDE.CA_ID_MAG_CALIB,
                 CAServicesIDE.CA_ID_MAG_CALIB,
                 MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB,
@@ -294,7 +323,7 @@ class PortReader:
         """
         try:
             magnetometer = MagnetometerOffsetMatrix(matrix)
-            message = magnetometer.generate_hex(
+            message = magnetometer.generate_write_hex(
                 CAServicesIDE.CA_ID_MAG_CALIB,
                 CAServicesIDE.CA_ID_MAG_CALIB,
                 MagCalibParseMessageAPI.MAGCALIB_PARSE_MESSAGE_READ_MATRIX_CALIB,

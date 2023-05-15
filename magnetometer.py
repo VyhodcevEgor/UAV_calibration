@@ -238,23 +238,18 @@ def mag_input_validation(
     return flag
 
 
-def create_mag_polynom(calibration_matrix):
+def mag_transfer_preparation(calibration_matrix):
     """
-    Данная функция составляет калибровочный полином и полином смещения из
-    калибровочной матрицы магнитометра.
+    Данная функция преобразовывает калибровочную матрицу магнитометра перед
+    записью в память сенсора. Вычисленная калибровочная матрица разбивается на
+    калибровочную матрицу и матрицу смещений.
     :param calibration_matrix: Калибровочная матрица <numpy.ndarray>
         размерностью 4x3, полученная после математической обработки.
-    :return: Возвращает два <numpy.ndarray> - калибровочный полином
-        размерностью 1x9 и полином смещения размерностью 1x3 для дальнейшей
-        записи их в ПЗУ.
+    :return: Возвращает два <numpy.ndarray> - калибровочную матрицу
+        размерностью 3х3 и матрицу смещения размерностью 1x3 для дальнейшей
+        записи их в память.
     """
-    calibration_polynom = []
-    displacement_polynom = []
-    for idx in range(3):
-        column = calibration_matrix[:, idx]
-        calibration_polynom.append([column[0], 0, 0, 0, 0, 0])
-        calibration_polynom.append([column[1], 0, 0, 0, 0, 0])
-        calibration_polynom.append([column[2], 0, 0, 0, 0, 0])
-        displacement_polynom.append([-column[3], 0, 0, 0, 0, 0])
+    calibration_matrix = calibration_matrix[0:3, :]
+    displacement_matrix = calibration_matrix[3, :]
 
-    return calibration_polynom, displacement_polynom
+    return calibration_matrix, displacement_matrix

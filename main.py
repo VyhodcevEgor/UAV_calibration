@@ -193,19 +193,20 @@ class MainWindow(QMainWindow):
 
         calib_pol, offset_pol = [[0]], [[0]]
 
+        # Проверка на то, есть ли данные в датчике или нет
         match self.current_sensor:
             case indicT.Acc:
                 calib_pol, offset_pol = self.port_reader.read_acc_data()
             case indicT.Mag:
-                print('Я веселая заглушка')
+                calib_pol, offset_pol = self.port_reader.read_mag_data()
             case indicT.Gyr:
                 calib_pol, offset_pol = self.port_reader.read_acc_data()
 
-        is_calib_zero = True if sum(sum(calib_pol,[])) == 0 else False
+        is_calib_zero = True if sum(sum(calib_pol, [])) == 0 else False
         is_offset_zero = True if sum(sum(offset_pol, [])) == 0 else False
 
         is_re_calib = False
-        if not is_calib_zero and not is_offset_zero:
+        if not is_calib_zero or not is_offset_zero:
             is_re_calib = recalib_dialog.show_dialog()
 
         if not is_re_calib:
@@ -308,7 +309,7 @@ class MainWindow(QMainWindow):
                         if self.matrix is not None:
                             self.calibration_polynom, \
                                 self.displacement_polynom = \
-                                magnet.create_mag_polynom(self.matrix)
+                                magnet.mag_transfer_preparation(self.matrix)
                     # Расчет для гироскопа
                     case indicT.Gyr:
                         raw_data = gyro.form_raw_data(self.position_data)
@@ -367,7 +368,7 @@ class MainWindow(QMainWindow):
                 if self.matrix is not None:
                     self.calibration_polynom, \
                         self.displacement_polynom = \
-                        magnet.create_mag_polynom(self.matrix)
+                        magnet.mag_transfer_preparation(self.matrix)
             # Расчет для гироскопа
             case indicT.Gyr:
                 if self.matrix is not None:
@@ -417,10 +418,8 @@ class MainWindow(QMainWindow):
                     return
             # Запись данных для магнитометра
             case indicT.Mag:
-                print(
-                    'Затычка отработала, на момент '
-                    'внедрения функция ещё не готова'
-                )
+                self.port_reader.send_mag_calib_mat(self.calibration_polynom)
+                self.port_reader.send_mag_offset_mat(self.displacement_polynom)
             # Запись данных для гироскопа
             case indicT.Gyr:
                 transfer_result = self.port_reader.send_gyr_calib_mat(
@@ -458,7 +457,7 @@ class MainWindow(QMainWindow):
                 if self.matrix is not None:
                     self.calibration_polynom, \
                         self.displacement_polynom = \
-                        magnet.create_mag_polynom(self.matrix)
+                        magnet.mag_transfer_preparation(self.matrix)
             # Расчет для гироскопа
             case indicT.Gyr:
                 if self.matrix is not None:

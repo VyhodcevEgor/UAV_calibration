@@ -154,10 +154,12 @@ class MagnetometerOffsetMatrix:
     Класс для описания матрицы смещений магнитометра
     """
 
-    def __init__(self, matrix):
+    def __init__(self, matrix=None):
         """
         :param matrix: матрица смещений магнитометра
         """
+        if matrix is None:
+            matrix = [[0]]
         self.__payload_size = 12
         self.__matrix = matrix
 
@@ -177,7 +179,7 @@ class MagnetometerOffsetMatrix:
             temp.extend(elem)
         return temp
 
-    def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
+    def generate_write_hex(self, sender_id, recipient_id, pack_id, crc_type):
         """
         Данная функция генерирует сообщение для отправки на контроллер
         :param sender_id: отправитель
@@ -202,6 +204,25 @@ class MagnetometerOffsetMatrix:
 
         crc = struct.pack("I", crc)
         return header + pay_load + crc
+
+    def get_mag_off_mat(self, data):
+        pay_load = data[16:28]
+        mag_off_mat = []
+        pos = 0
+        for i in range(3):
+            temp_arr = []
+            for j in range(3):
+                temp = struct.unpack("f", pay_load[pos:pos + 4])[0]
+                temp_arr.append(temp)
+                pos += 4
+            mag_off_mat.append(temp_arr)
+        self.rewrite_matrix(mag_off_mat)
+        return mag_off_mat
+
+    @staticmethod
+    def generate_read_hex(sender_id, recipient_id, pack_id, crc_type):
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
+        return header + struct.pack("h", 21845)
 
 
 class ResetGyrPolyAll:
@@ -445,7 +466,9 @@ class AccelerometerOffsetPolynomial:
 
 class MagnetometerCalibrationMatrix:
 
-    def __init__(self, matrix):
+    def __init__(self, matrix=None):
+        if matrix is None:
+            matrix = [[0]]
         self.__payload_size = 36
         self.__matrix = matrix
 
@@ -458,7 +481,7 @@ class MagnetometerCalibrationMatrix:
             temp.extend(elem)
         return temp
 
-    def generate_hex(self, sender_id, recipient_id, pack_id, crc_type):
+    def generate_write_hex(self, sender_id, recipient_id, pack_id, crc_type):
 
         header = generate_header(sender_id, recipient_id, pack_id, crc_type, self.__payload_size)
 
@@ -475,6 +498,25 @@ class MagnetometerCalibrationMatrix:
 
         crc = struct.pack("I", crc)
         return header + pay_load + crc
+
+    def get_mag_calib_mat(self, data):
+        pay_load = data[16:52]
+        mag_calib_mat = []
+        pos = 0
+        for i in range(3):
+            temp_arr = []
+            for j in range(3):
+                temp = struct.unpack("f", pay_load[pos:pos + 4])[0]
+                temp_arr.append(temp)
+                pos += 4
+            mag_calib_mat.append(temp_arr)
+        self.rewrite_matrix(mag_calib_mat)
+        return mag_calib_mat
+
+    @staticmethod
+    def generate_read_hex(sender_id, recipient_id, pack_id, crc_type):
+        header = generate_header(sender_id, recipient_id, pack_id, crc_type, 0)
+        return header + struct.pack("h", 21845)
 
 
 class ICALIBGYRACCParseMessageAPI:

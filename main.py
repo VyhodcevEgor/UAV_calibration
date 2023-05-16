@@ -8,6 +8,7 @@ import sys
 import json
 import error
 import last_step_dialog
+import recalib_dialog
 import accelerometer as accel
 import magnetometer as magnet
 import gyroscope as gyro
@@ -49,7 +50,7 @@ class MainWindow(QMainWindow):
         self.sleeping_time = 0.5
         self.current_step_num = 1
         self.reload_calib = False
-        self.current_sensor = ''
+        self.current_sensor = indicT.Acc
 
         # Скрытие и отображение виджетов при инициализации
         if not self.console_opened:
@@ -189,6 +190,26 @@ class MainWindow(QMainWindow):
         self.progress_value = 0
         self.position_data = []
         self.calibration_is_start = True
+
+        calib_pol, offset_pol = [[0]], [[0]]
+
+        match self.current_sensor:
+            case indicT.Acc:
+                calib_pol, offset_pol = self.port_reader.read_acc_data()
+            case indicT.Mag:
+                print('Я веселая заглушка')
+            case indicT.Gyr:
+                calib_pol, offset_pol = self.port_reader.read_acc_data()
+
+        is_calib_zero = True if sum(sum(calib_pol,[])) == 0 else False
+        is_offset_zero = True if sum(sum(offset_pol, [])) == 0 else False
+
+        is_re_calib = False
+        if not is_calib_zero and not is_offset_zero:
+            is_re_calib = recalib_dialog.show_dialog()
+
+        if not is_re_calib:
+            return
 
         # Сохранение выбранных пользователем данных
         self.magnetic_declination = self.magneticDeclination.value()
@@ -468,6 +489,7 @@ class MainWindow(QMainWindow):
                     text += '0 '
             text += '\n\n'
 
+        self.port_reader.send_to_pdu(self.current_sensor)
         self.equipmentText.setText(text)
         self.consoleText.setText(
             'Данные сохранены в ПЗУ датчика.'
